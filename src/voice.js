@@ -234,7 +234,9 @@ function pcmToWav(pcmBytes, sampleRate = 24000, numChannels = 1, bitsPerSample =
   return buffer
 }
 
-async function speakWithGemini(ai, text, personalityKey, lang, callbacks = {}) {
+import { callGemini } from './api.js'
+
+async function speakWithGemini(text, personalityKey, lang, callbacks = {}) {
   const { onStart, onEnd, onError } = callbacks
   const voiceName = GEMINI_VOICES[personalityKey] || 'Kore'
   const stylePrefix = STYLE_PROMPTS[personalityKey]?.[lang]
@@ -242,7 +244,7 @@ async function speakWithGemini(ai, text, personalityKey, lang, callbacks = {}) {
   // The prefix itself is not heard — Gemini parses it as a directive.
   const styledText = stylePrefix ? `${stylePrefix} ${text}` : text
 
-  const response = await ai.models.generateContent({
+  const response = await callGemini({
     model: 'gemini-2.5-flash-preview-tts',
     contents: [{ parts: [{ text: styledText }] }],
     config: {
@@ -282,17 +284,17 @@ async function speakWithGemini(ai, text, personalityKey, lang, callbacks = {}) {
 let _geminiTtsBroken = false
 
 /**
- * Public speak() — tries Gemini first, falls back to browser TTS on error.
- * Pass `ai` (the GoogleGenAI client) to enable Gemini.
+ * Public speak() — tries Gemini TTS first (via the proxy / SDK in api.js),
+ * falls back to browser TTS if that fails or isn't available.
  * Returns the underlying utterance/audio handle, or null if both paths fail.
  */
-export async function speak(text, personalityKey, lang, callbacks = {}, ai = null) {
+export async function speak(text, personalityKey, lang, callbacks = {}) {
   if (!text) return null
   stopSpeaking()
 
-  if (ai && !_geminiTtsBroken) {
+  if (!_geminiTtsBroken) {
     try {
-      return await speakWithGemini(ai, text, personalityKey, lang, callbacks)
+      return await speakWithGemini(text, personalityKey, lang, callbacks)
     } catch (err) {
       const msg = err?.message || String(err)
       console.warn('[voice] Gemini TTS unavailable, falling back to browser TTS:', msg)

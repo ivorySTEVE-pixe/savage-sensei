@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { GoogleGenAI } from '@google/genai'
+import { callGemini } from './api.js'
 import {
   Flame, BookOpen, ScrollText, X, Trash2,
   Loader2, Send, Languages, Sparkles, ArrowLeft,
@@ -16,7 +16,8 @@ import demonCoachImg from './assets/demon-coach.png'
 import osakaAuntieImg from './assets/osaka-auntie.png'
 import techBroImg from './assets/tech-bro.png'
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY })
+/* All Gemini access goes through `callGemini` from ./api.js — proxied
+   server-side in production, direct SDK in local dev. */
 
 /* ─── PERSONALITIES ─────────────────────────────────────────────── */
 const PERSONALITIES = {
@@ -899,7 +900,7 @@ function App() {
         const msg = err?.message || ''
         if (msg) showToast(lang === 'jp' ? `音声エラー：${msg}` : `Voice error: ${msg}`)
       },
-    }, ai)
+    })
   }, [chatMessages, personalityKey, chatMode, step, lang])
 
   /* Sync accent CSS variable */
@@ -961,7 +962,7 @@ function App() {
         personality.prompt[lang] +
         buildContextString(sessions, lang) +
         CHAT_MODE_ADDON[lang]
-      const response = await ai.models.generateContent({
+      const response = await callGemini({
         model: 'gemini-2.5-flash',
         contents: toGeminiContents(updated),
         config: { systemInstruction: systemPrompt },
@@ -1053,7 +1054,7 @@ function App() {
     speak(msg.text, personalityKey, lang, {
       onEnd:   () => setSpeakingId((id) => (id === msg.ts ? null : id)),
       onError: () => setSpeakingId((id) => (id === msg.ts ? null : id)),
-    }, ai)
+    })
   }
 
   const handleSubmit = async () => {
@@ -1062,7 +1063,7 @@ function App() {
     try {
       const userMsg = `Subject: ${subject}\nDuration: ${duration} minutes\nNotes: ${notes || '(none)'}`
       const systemPrompt = personality.prompt[lang] + buildContextString(sessions, lang)
-      const response = await ai.models.generateContent({
+      const response = await callGemini({
         model: 'gemini-2.5-flash',
         contents: userMsg,
         config: { systemInstruction: systemPrompt },
@@ -1464,7 +1465,7 @@ function App() {
                 </p>
               </div>
               <AskAITab
-                sessions={sessions} accent={accent} lang={lang} ai={ai}
+                sessions={sessions} accent={accent} lang={lang} 
                 chatMessages={chatMessages}
                 setChatMessages={setChatMessages}
                 openFullChat={(key) => {
@@ -1518,7 +1519,7 @@ function App() {
               </div>
               {goalsSubTab === 'goals'
                 ? <GoalsTab accent={accent} sessions={sessions} lang={lang} />
-                : <QuizTab accent={accent} sessions={sessions} lang={lang} ai={ai} />}
+                : <QuizTab accent={accent} sessions={sessions} lang={lang}  />}
             </>
           )}
 
@@ -2167,7 +2168,7 @@ function GoalItem({ g, onToggle, onDelete }) {
 }
 
 /* ─── QUIZ TAB ─────────────────────────────────────────────── */
-function QuizTab({ accent, sessions, lang, ai }) {
+function QuizTab({ accent, sessions, lang }) {
   const [questions, setQuestions] = useState([])  // [{q, options[4], answer (idx)}]
   const [idx, setIdx]         = useState(0)
   const [picked, setPicked]   = useState(null)
@@ -2211,7 +2212,7 @@ function QuizTab({ accent, sessions, lang, ai }) {
       const prompt = lang === 'jp'
         ? `次の学習履歴に基づいて、ユーザーの知識を試す日本語の四択クイズを5問作成してください。各問題は記録された科目に関連していること。\n\n学習履歴:\n${subjLines}\n\n以下の純粋なJSONだけを返答せよ（前後に説明や\`\`\`は不要）:\n{"questions":[{"q":"問題文","options":["A","B","C","D"],"answer":0}]}\nanswerは正解のオプションのインデックス（0-3）。`
         : `Based on the following study history, generate exactly 5 multiple-choice quiz questions to test the user's knowledge. Questions should relate to subjects they've actually studied. Vary difficulty.\n\nStudy history:\n${subjLines}\n\nRespond with ONLY valid JSON, no markdown, no commentary:\n{"questions":[{"q":"...","options":["A","B","C","D"],"answer":0}]}\nThe "answer" field must be the index (0-3) of the correct option.`
-      const response = await ai.models.generateContent({
+      const response = await callGemini({
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: { responseMimeType: 'application/json' },
@@ -2410,7 +2411,7 @@ function QuizTab({ accent, sessions, lang, ai }) {
 /* ─── ASK AI TAB ───────────────────────────────────────────── */
 const ASK_KEY = 'savage-sensei-ask'
 
-function AskAITab({ sessions, accent, lang, ai, chatMessages, setChatMessages, openFullChat }) {
+function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openFullChat }) {
   /* selectedSensei = null means Analyst (generic). Otherwise a personality key. */
   const [selectedSensei, setSelectedSensei] = useState(null)
 
@@ -2465,7 +2466,7 @@ function AskAITab({ sessions, accent, lang, ai, chatMessages, setChatMessages, o
         const sys = lang === 'jp'
           ? `あなたはユーザーの個人的なAI学習アシスタントです。過去のセッションを分析し、パターン・弱点・進捗を見抜く。直接的で、データに基づいて、簡潔に答える（2〜5文）。${ctx || '\n\nまだセッションが記録されていない。'}`
           : `You are the user's personal AI study assistant. You analyze their past sessions to spot patterns, weak spots, and progress. Be direct, data-driven, and concise (2-5 sentences). Use the session history below as context.${ctx || "\n\nNo sessions logged yet."}`
-        const response = await ai.models.generateContent({
+        const response = await callGemini({
           model: 'gemini-2.5-flash',
           contents: toGeminiContents(updated),
           config: { systemInstruction: sys },
@@ -2482,7 +2483,7 @@ function AskAITab({ sessions, accent, lang, ai, chatMessages, setChatMessages, o
           PERSONALITIES[selectedSensei].prompt[lang] +
           buildContextString(sessions, lang) +
           CHAT_MODE_ADDON[lang]
-        const response = await ai.models.generateContent({
+        const response = await callGemini({
           model: 'gemini-2.5-flash',
           contents: toGeminiContents(updated),
           config: { systemInstruction: sys },
