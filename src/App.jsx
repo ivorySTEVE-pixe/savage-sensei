@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react'
 import { callGemini } from './api.js'
 import {
   Flame, BookOpen, ScrollText, X, Trash2,
@@ -352,7 +352,7 @@ function getGreeting(personalityKey, sessions, openGoals, lang) {
 }
 
 /* ─── PARTICLE DATA (stable reference) ──────────────────────────── */
-const PARTICLE_DATA = Array.from({ length: 30 }, () => {
+const PARTICLE_DATA = Array.from({ length: 16 }, () => {
   const r = Math.random()
   const type = r < 0.25 ? 'ember-lg' : r < 0.65 ? 'ember-sm' : 'spark'
   return {
@@ -363,8 +363,17 @@ const PARTICLE_DATA = Array.from({ length: 30 }, () => {
   }
 })
 
+/* ─── STATIC STYLE CONSTANTS ─────────────────────────────────────── */
+const GLOSSY_BG_FOCUS = 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 60%, rgba(255,255,255,0.02) 100%)'
+const GLOSSY_BG_IDLE  = 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 60%, rgba(255,255,255,0.015) 100%)'
+const BLUR_STYLE = {
+  borderColor: 'rgba(255,255,255,0.1)',
+  background: GLOSSY_BG_IDLE,
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.25), 0 1px 0 rgba(0,0,0,0.15)',
+}
+
 /* ─── BACKGROUND LAYERS ─────────────────────────────────────────── */
-function BgLayers({ accent }) {
+const BgLayers = memo(function BgLayers({ accent }) {
   const a = accent || '#ef4444'
   return (
     <>
@@ -387,10 +396,10 @@ function BgLayers({ accent }) {
       </div>
     </>
   )
-}
+})
 
 /* ─── ROAST PANEL ────────────────────────────────────────────────── */
-function RoastPanel({ roast, personality, t, lang, accent, onContinue }) {
+const RoastPanel = memo(function RoastPanel({ roast, personality, t, lang, accent, onContinue }) {
   return (
     <div className="anim-fadein" style={{
       borderRadius: 14, overflow: 'hidden',
@@ -443,10 +452,10 @@ function RoastPanel({ roast, personality, t, lang, accent, onContinue }) {
       )}
     </div>
   )
-}
+})
 
 /* ─── HISTORY ITEM ───────────────────────────────────────────────── */
-function HistoryItem({ session, t, onDelete }) {
+const HistoryItem = memo(function HistoryItem({ session, t, onDelete }) {
   const [hov, setHov] = useState(false)
   const p = PERSONALITIES[session.personalityKey]
   const color = p ? p.accent : 'rgba(148,163,184,0.5)'
@@ -487,10 +496,10 @@ function HistoryItem({ session, t, onDelete }) {
       )}
     </div>
   )
-}
+})
 
 /* ─── CHAT BUBBLE ────────────────────────────────────────────────── */
-function ChatBubble({ m, personality, accent, fmtTime, speaking, onToggleSpeak, t }) {
+const ChatBubble = memo(function ChatBubble({ m, personality, accent, fmtTime, speaking, onToggleSpeak, t }) {
   const isUser = m.role === 'user'
   return (
     <div className="anim-fadeup" style={{
@@ -547,7 +556,7 @@ function ChatBubble({ m, personality, accent, fmtTime, speaking, onToggleSpeak, 
       </div>
     </div>
   )
-}
+})
 
 /* ─── VOICE COMPOSER ─────────────────────────────────────────────── */
 function VoiceComposer({ accent, listening, sending, interim, t, onStart, onStop }) {
@@ -843,7 +852,26 @@ function App() {
   const t = TEXT[lang]
   const personality = personalityKey ? PERSONALITIES[personalityKey] : null
   const accent = personality?.accent || '#ef4444'
-  const streak = calculateStreak(sessions)
+  const streak = useMemo(() => calculateStreak(sessions), [sessions])
+
+  const focusStyle = useMemo(() => ({
+    borderColor: `${accent}aa`,
+    background: GLOSSY_BG_FOCUS,
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 0 0 3px ${accent}26, 0 0 24px -6px ${accent}66`,
+  }), [accent])
+
+  const greetings = useMemo(() => {
+    const g = {}
+    for (const key of Object.keys(PERSONALITIES)) {
+      g[key] = getGreeting(key, sessions, openGoalsCount, lang)
+    }
+    return g
+  }, [sessions, openGoalsCount, lang])
+
+  const recentSubjects = useMemo(
+    () => [...new Set(sessions.map(s => s.subject))].filter(Boolean).slice(0, 4),
+    [sessions]
+  )
 
   /* Persist sessions + lang */
   useEffect(() => {
@@ -913,23 +941,23 @@ function App() {
     document.documentElement.style.setProperty('--accent-rgb', `${r},${g},${b}`)
   }, [accent])
 
-  const showToast = (msg) => {
+  const showToast = useCallback((msg) => {
     setToast({ msg, out: false })
     setTimeout(() => setToast(t => t ? { ...t, out: true } : null), 2200)
     setTimeout(() => setToast(null), 2600)
-  }
+  }, [])
 
-  const goWork = (key) => {
+  const goWork = useCallback((key) => {
     setFading(true)
     setTimeout(() => { setPersonalityKey(key); setStep('work'); setFading(false) }, 180)
-  }
-  const goPick = () => {
+  }, [])
+  const goPick = useCallback(() => {
     setFading(true); setRoast('')
     setTimeout(() => { setStep('pick'); setFading(false) }, 180)
-  }
+  }, [])
 
   /* ── CHAT ── */
-  const goChat = () => {
+  const goChat = useCallback(() => {
     if (!personalityKey) return
     const existing = chatMessages[personalityKey] || []
     if (existing.length === 0 && roast && sessions[0]) {
@@ -947,11 +975,12 @@ function App() {
     }
     setFading(true)
     setTimeout(() => { setStep('chat'); setFading(false) }, 180)
-  }
-  const goBackToWork = () => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personalityKey, chatMessages, roast, sessions, lang])
+  const goBackToWork = useCallback(() => {
     setFading(true)
     setTimeout(() => { setStep('work'); setFading(false) }, 180)
-  }
+  }, [])
 
   const _sendChatCore = async (text, current) => {
     const updated = [...current, { role: 'user', text, ts: Date.now() }]
@@ -1037,7 +1066,7 @@ function App() {
     recognizerRef.current = rec
     rec.start()
   }
-  const stopListening = () => recognizerRef.current?.stop()
+  const stopListening = useCallback(() => recognizerRef.current?.stop(), [])
 
   const toggleSpeakMessage = (msg) => {
     if (!TTS_SUPPORTED || !personalityKey) {
@@ -1085,23 +1114,9 @@ function App() {
     }
   }
 
-  const handleDelete = (id) => setSessions(s => s.filter(x => x.id !== id))
+  const handleDelete = useCallback((id) => setSessions(s => s.filter(x => x.id !== id)), [])
 
-  /* Glossy input states — these layer atop the .input-field defaults
-     defined in index.css. Inline styles win, so we restate the gradient
-     bg + inner highlight in addition to the accent glow. */
-  const glossyBgFocus = 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 60%, rgba(255,255,255,0.02) 100%)'
-  const glossyBgIdle  = 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 60%, rgba(255,255,255,0.015) 100%)'
-  const focusStyle = {
-    borderColor: `${accent}aa`,
-    background: glossyBgFocus,
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 0 0 3px ${accent}26, 0 0 24px -6px ${accent}66`,
-  }
-  const blurStyle = {
-    borderColor: 'rgba(255,255,255,0.1)',
-    background: glossyBgIdle,
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.25), 0 1px 0 rgba(0,0,0,0.15)',
-  }
+  /* focusStyle is memoized above; blurStyle is the module-level BLUR_STYLE constant. */
 
   return (
     <>
@@ -1201,7 +1216,7 @@ function App() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {Object.entries(PERSONALITIES).map(([key, p], i) => {
-                    const greet = getGreeting(key, sessions, openGoalsCount, lang)
+                    const greet = greetings[key]
                     return (
                       <button key={key} onClick={() => goWork(key)} className={`persona-card stagger-${i+1}`} style={{
                         background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
@@ -1381,7 +1396,7 @@ function App() {
                     fontSize: 11, fontStyle: 'italic',
                     color: 'rgba(203,213,225,0.75)', lineHeight: 1.5,
                   }}>
-                    {getGreeting(personalityKey, sessions, openGoalsCount, lang)}
+                    {greetings[personalityKey]}
                   </span>
                 </div>
 
@@ -1392,23 +1407,19 @@ function App() {
                     <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
                       placeholder={t.subjectPh} className="input-field"
                       onFocus={e => Object.assign(e.target.style, focusStyle)}
-                      onBlur={e => Object.assign(e.target.style, blurStyle)} />
+                      onBlur={e => Object.assign(e.target.style, BLUR_STYLE)} />
                     {/* Recent subject chips */}
-                    {(() => {
-                      const recentSubjects = [...new Set(sessions.map(s => s.subject))].filter(Boolean).slice(0, 4)
-                      if (!recentSubjects.length) return null
-                      return (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
-                          {recentSubjects.map(s => (
-                            <button key={s} type="button"
-                              onClick={() => setSubject(s)}
-                              className={`chip${subject === s ? ' active' : ''}`}>
-                              {s}
-                            </button>
-                          ))}
-                        </div>
-                      )
-                    })()}
+                    {recentSubjects.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
+                        {recentSubjects.map(s => (
+                          <button key={s} type="button"
+                            onClick={() => setSubject(s)}
+                            className={`chip${subject === s ? ' active' : ''}`}>
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.13em',
@@ -1416,7 +1427,7 @@ function App() {
                     <input type="number" value={duration} onChange={e => setDuration(e.target.value)}
                       placeholder={t.durationPh} className="input-field"
                       onFocus={e => Object.assign(e.target.style, focusStyle)}
-                      onBlur={e => Object.assign(e.target.style, blurStyle)} />
+                      onBlur={e => Object.assign(e.target.style, BLUR_STYLE)} />
                   </div>
                 </div>
 
@@ -1437,7 +1448,7 @@ function App() {
                   <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)}
                     placeholder={t.notesPh} className="input-field"
                     onFocus={e => Object.assign(e.target.style, focusStyle)}
-                    onBlur={e => Object.assign(e.target.style, blurStyle)} />
+                    onBlur={e => Object.assign(e.target.style, BLUR_STYLE)} />
                 </div>
                 <button onClick={handleSubmit} disabled={loading}
                   className={`btn-primary${!loading && subject && duration ? ' cta-shimmer' : ''}`}
@@ -1737,7 +1748,7 @@ function App() {
 }
 
 /* ─── HISTORY SECTION ────────────────────────────────────────────── */
-function HistSection({ sessions, t, expanded, setExpanded, onDelete, onClear }) {
+const HistSection = memo(function HistSection({ sessions, t, expanded, setExpanded, onDelete, onClear }) {
   const visible = expanded ? sessions : sessions.slice(0, 3)
   return (
     <div className="anim-fadeup">
@@ -1782,10 +1793,10 @@ function HistSection({ sessions, t, expanded, setExpanded, onDelete, onClear }) 
       )}
     </div>
   )
-}
+})
 
 /* ─── EXPANDABLE STAT CARD ────────────────────────────────── */
-function ExpandableStatCard({ kind, accent, sessions, streak, lang, label }) {
+const ExpandableStatCard = memo(function ExpandableStatCard({ kind, accent, sessions, streak, lang, label }) {
   const [open, setOpen] = useState(false)
   const isStreak = kind === 'streak'
   const value = isStreak ? streak : sessions.length
@@ -1902,7 +1913,7 @@ function ExpandableStatCard({ kind, accent, sessions, streak, lang, label }) {
       )}
     </button>
   )
-}
+})
 
 /* ─── INFO MODAL ──────────────────────────────────────────── */
 function InfoModal({ onClose, accent, lang }) {
@@ -1997,7 +2008,7 @@ function InfoModal({ onClose, accent, lang }) {
 }
 
 /* ─── STATS TAB ───────────────────────────────────────────── */
-function StatsTab({ sessions, accent, lang }) {
+const StatsTab = memo(function StatsTab({ sessions, accent, lang }) {
   if (!sessions.length) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(148,163,184,.4)', fontSize: 14 }}>
@@ -2091,7 +2102,7 @@ function StatsTab({ sessions, accent, lang }) {
       </div>
     </div>
   )
-}
+})
 
 /* ─── GOALS TAB ───────────────────────────────────────────── */
 function GoalsTab({ accent, sessions, lang }) {
@@ -2196,7 +2207,7 @@ function GoalsTab({ accent, sessions, lang }) {
   )
 }
 
-function GoalItem({ g, onToggle, onDelete }) {
+const GoalItem = memo(function GoalItem({ g, onToggle, onDelete }) {
   const [hov, setHov] = useState(false)
   return (
     <div className="goal-item"
@@ -2231,7 +2242,7 @@ function GoalItem({ g, onToggle, onDelete }) {
       )}
     </div>
   )
-}
+})
 
 /* ─── QUIZ TAB ─────────────────────────────────────────────── */
 function QuizTab({ accent, sessions, lang }) {

@@ -116,8 +116,9 @@ body::after {
 
 .bg-orb {
   position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
-  filter: blur(120px);
-  animation: orbFloat 22s ease-in-out infinite;
+  filter: blur(100px);
+  animation: orbFloat 28s ease-in-out infinite;
+  will-change: transform;
   transition: background 1.1s cubic-bezier(.16,1,.3,1), opacity 1.1s;
 }
 @keyframes orbFloat {
@@ -142,6 +143,7 @@ body::after {
 /* ── FLAME PARTICLES ── */
 .flame-wrap {
   position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden;
+  contain: strict;
 }
 .fp {
   position: absolute; bottom: -20px; border-radius: 50%;
