@@ -210,6 +210,114 @@ body::after {
   transform: translateX(-50%) translateY(0);
 }
 
+/* === WORK STEP DECORATIONS === */
+@keyframes avatarHalo {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.12); }
+}
+@keyframes borderSweep {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+@keyframes ctaShimmer {
+  0%   { background-position: -120% 0; }
+  100% { background-position: 220% 0; }
+}
+@keyframes typeMarquee {
+  0%   { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0);   opacity: 1; }
+}
+
+/* Pulsing accent halo for the active sensei avatar */
+.sensei-halo {
+  position: absolute;
+  inset: -4px;
+  border-radius: 14px;
+  filter: blur(10px);
+  opacity: 0.5;
+  animation: avatarHalo 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Form panel with rotating gradient border + faded watermark */
+.work-form {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.work-form::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(110deg,
+    var(--ac, #ef4444) 0%, transparent 22%,
+    transparent 78%, var(--ac, #ef4444) 100%);
+  background-size: 300% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0.45;
+  animation: borderSweep 6s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+.work-form::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(420px 240px at 100% -20%, var(--ac, #ef4444)10 0%, transparent 60%),
+    radial-gradient(360px 220px at -10% 110%, var(--ac, #ef4444)08 0%, transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Accent shimmer on the submit button when ready (not loading) */
+.cta-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.cta-shimmer::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg,
+    transparent 0%, transparent 35%,
+    rgba(255,255,255,0.28) 50%,
+    transparent 65%, transparent 100%);
+  background-size: 200% 100%;
+  background-position: -120% 0;
+  animation: ctaShimmer 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Quick-fill chips */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  color: rgba(203,213,225,0.75);
+  font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--ac, #ef4444);
+  color: #f1f5f9;
+  background: var(--ac-bg, rgba(239,68,68,0.14));
+}
+.chip.active {
+  border-color: var(--ac, #ef4444);
+  color: var(--ac, #ef4444);
+  background: var(--ac-bg, rgba(239,68,68,0.14));
+}
+
+/* Type-in motto */
+.sensei-motto {
+  animation: typeMarquee 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
 /* === HERO TITLE: GRADIENT SHIMMER === */
 @keyframes heroEnter {
   0%   { opacity: 0; transform: translateY(14px); letter-spacing: 0.05em; filter: blur(6px); }

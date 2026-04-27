@@ -1336,18 +1336,42 @@ function App() {
                       {personality.label[lang]}
                     </div>
                   </div>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, overflow: 'hidden',
-                    border: `2px solid ${accent}40`, flexShrink: 0 }}>
-                    <img src={personality.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{
+                    position: 'relative', width: 38, height: 38, flexShrink: 0,
+                  }}>
+                    <span className="sensei-halo" style={{ background: accent }} />
+                    <div style={{
+                      position: 'relative', width: 38, height: 38, borderRadius: 10,
+                      overflow: 'hidden', border: `2px solid ${accent}`,
+                      boxShadow: `0 0 12px ${accent}55`,
+                    }}>
+                      <img src={personality.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Form */}
-              <div className="anim-fadeup" style={{
-                background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
+              <div className="anim-fadeup work-form" style={{
+                '--ac': accent, '--ac-bg': `${accent}1f`,
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.07)',
                 borderRadius: 16, padding: '26px 24px 22px', marginBottom: 18,
               }}>
+                {/* Personality motto / battle-cry */}
+                <div className="sensei-motto" style={{
+                  display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18,
+                  paddingBottom: 14, borderBottom: `1px dashed ${accent}26`,
+                }}>
+                  <Sparkles size={11} color={accent} />
+                  <span style={{
+                    fontSize: 11, fontStyle: 'italic',
+                    color: 'rgba(203,213,225,0.75)', lineHeight: 1.5,
+                  }}>
+                    {getGreeting(personalityKey, sessions, openGoalsCount, lang)}
+                  </span>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px', gap: 10, marginBottom: 10 }}>
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.13em',
@@ -1356,6 +1380,22 @@ function App() {
                       placeholder={t.subjectPh} className="input-field"
                       onFocus={e => Object.assign(e.target.style, focusStyle)}
                       onBlur={e => Object.assign(e.target.style, blurStyle)} />
+                    {/* Recent subject chips */}
+                    {(() => {
+                      const recentSubjects = [...new Set(sessions.map(s => s.subject))].filter(Boolean).slice(0, 4)
+                      if (!recentSubjects.length) return null
+                      return (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
+                          {recentSubjects.map(s => (
+                            <button key={s} type="button"
+                              onClick={() => setSubject(s)}
+                              className={`chip${subject === s ? ' active' : ''}`}>
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      )
+                    })()}
                   </div>
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.13em',
@@ -1366,6 +1406,18 @@ function App() {
                       onBlur={e => Object.assign(e.target.style, blurStyle)} />
                   </div>
                 </div>
+
+                {/* Quick-fill duration chips */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 16 }}>
+                  {[15, 30, 45, 60, 90].map(m => (
+                    <button key={m} type="button"
+                      onClick={() => setDuration(String(m))}
+                      className={`chip${duration === String(m) ? ' active' : ''}`}>
+                      {m}m
+                    </button>
+                  ))}
+                </div>
+
                 <div style={{ marginBottom: 18 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.13em',
                     color: 'rgba(148,163,184,0.45)', textTransform: 'uppercase', marginBottom: 8 }}>{t.notes}</div>
@@ -1374,7 +1426,8 @@ function App() {
                     onFocus={e => Object.assign(e.target.style, focusStyle)}
                     onBlur={e => Object.assign(e.target.style, blurStyle)} />
                 </div>
-                <button onClick={handleSubmit} disabled={loading} className="btn-primary"
+                <button onClick={handleSubmit} disabled={loading}
+                  className={`btn-primary${!loading && subject && duration ? ' cta-shimmer' : ''}`}
                   style={{ background: loading ? `${accent}70` : accent, boxShadow: loading ? 'none' : `0 6px 24px -6px ${accent}70` }}>
                   {loading ? (
                     <>
