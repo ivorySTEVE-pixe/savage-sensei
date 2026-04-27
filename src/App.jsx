@@ -115,11 +115,11 @@ const TEXT = {
     title: 'Savage Sensei',
     tagline: 'Track your study.\nGet a brutally honest take from your sensei.',
     chooseTormentor: 'Pick your sensei',
-    subject: 'Subject', subjectPh: 'e.g. Python, Japanese, Math',
+    subject: 'Topic', subjectPh: 'e.g. Python, Japanese, Math',
     duration: 'Duration (min)', durationPh: '30',
     notes: 'Notes', notesPh: 'What did you study? What went wrong?',
     roastMe: 'Submit', thinking: 'Consulting',
-    fillIn: 'Please fill in subject and duration',
+    fillIn: 'Please fill in topic and duration',
     says: 'weighs in', history: 'Your sessions', clearAll: 'Clear all',
     confirmClear: 'Delete ALL sessions? This cannot be undone.',
     min: 'min', streak: 'Day Streak', sessions: 'Sessions',
@@ -149,11 +149,11 @@ const TEXT = {
     title: '鬼コーチ',
     tagline: '勉強を記録して、\n容赦のない先生の見立てをもらおう。',
     chooseTormentor: '先生を選ぶ',
-    subject: '科目', subjectPh: '例：Python、日本語、数学',
+    subject: 'トピック', subjectPh: '例：Python、日本語、数学',
     duration: '時間（分）', durationPh: '30',
     notes: 'メモ', notesPh: '何を勉強した？何があかんかった？',
     roastMe: '送信', thinking: '考えてる',
-    fillIn: '科目と時間を入力してや！',
+    fillIn: 'トピックと時間を入力してや！',
     says: 'の見立て', history: 'セッション履歴', clearAll: '全削除',
     confirmClear: '全部消すで？戻されへんで。',
     min: '分', streak: '日連続', sessions: '回',
@@ -1087,8 +1087,21 @@ function App() {
 
   const handleDelete = (id) => setSessions(s => s.filter(x => x.id !== id))
 
-  const focusStyle = { borderColor: `${accent}60`, boxShadow: `0 0 0 3px ${accent}18` }
-  const blurStyle  = { borderColor: 'rgba(255,255,255,0.08)', boxShadow: 'none' }
+  /* Glossy input states — these layer atop the .input-field defaults
+     defined in index.css. Inline styles win, so we restate the gradient
+     bg + inner highlight in addition to the accent glow. */
+  const glossyBgFocus = 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 60%, rgba(255,255,255,0.02) 100%)'
+  const glossyBgIdle  = 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 60%, rgba(255,255,255,0.015) 100%)'
+  const focusStyle = {
+    borderColor: `${accent}aa`,
+    background: glossyBgFocus,
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 0 0 3px ${accent}26, 0 0 24px -6px ${accent}66`,
+  }
+  const blurStyle = {
+    borderColor: 'rgba(255,255,255,0.1)',
+    background: glossyBgIdle,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.25), 0 1px 0 rgba(0,0,0,0.15)',
+  }
 
   return (
     <>
