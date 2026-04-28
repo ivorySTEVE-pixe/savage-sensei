@@ -1,0 +1,19 @@
+{
+  "name": "Savage Sensei",
+  "short_name": "Sensei",
+  "description": "Track your study, consult your sensei.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07080e",
+  "theme_color": "#07080e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

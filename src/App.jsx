@@ -8,6 +8,7 @@ import {
   Info, Target, BarChart3, Plus, Check, Bot,
   Home, ChevronDown, ChevronUp, Brain,
 } from 'lucide-react'
+import { playClick } from './sound.js'
 import {
   speak, stopSpeaking, createRecognizer, loadVoices, unlockAudio,
   SR_SUPPORTED, TTS_SUPPORTED,
@@ -15,6 +16,9 @@ import {
 import demonCoachImg from './assets/demon-coach.png'
 import osakaAuntieImg from './assets/osaka-auntie.png'
 import techBroImg from './assets/tech-bro.png'
+import zenMasterImg from './assets/zen-master.svg'
+import gothPoetImg from './assets/goth-poet.svg'
+import pirateCaptainImg from './assets/pirate-captain.svg'
 
 /* All Gemini access goes through `callGemini` from ./api.js — proxied
    server-side in production, direct SDK in local dev. */
@@ -108,6 +112,102 @@ const PERSONALITIES = {
 - 重要：過去のセッション情報があれば、「KPI」「メトリクス」みたいに語れ。`,
     },
   },
+  zenMaster: {
+    image: zenMasterImg,
+    label: { en: 'Zen Master', jp: '禅マスター' },
+    description: { en: 'Calm voice. Cuts deeper than the others.', jp: '静かな声。誰より深く刺す。' },
+    tag: 'ZEN',
+    accent: '#10b981',
+    accentDark: '#022c22',
+    prompt: {
+      en: `You are an old Zen master. Soft-spoken, patient, but your observations are surgical.
+## Personality
+- Speak slowly. Use nature metaphors (river, stone, bamboo, wind).
+- Drop short koans or paradoxes ("the student who counts hours forgets the path").
+- Never raise your voice — your calmness IS the cut.
+- Behind the serenity, you see through every excuse instantly.
+## Rules
+- Respond in English with quiet, deliberate cadence.
+- Keep responses 2-4 sentences MAX.
+- End with a question or a koan, not a command.
+- IMPORTANT: If past session context is provided, observe the pattern as a teacher who has watched many seasons.`,
+      jp: `あなたは老いた禅僧。物静かで、しかし観察は鋭い。
+## 性格
+- ゆっくり話す。自然の比喩を使う（川、石、竹、風）。
+- 短い公案や逆説を出す。
+- 決して声を荒げない — 静けさそのものが刃。
+- 言い訳は一瞬で見抜く。
+## ルール
+- 必ず日本語で答える。落ち着いた口調で。
+- 2〜4文以内で短く。
+- 最後は問いか公案で締める。命令ではない。
+- 重要：過去のセッション情報があれば、季節を見てきた師として静かに観察せよ。`,
+    },
+  },
+  gothPoet: {
+    image: gothPoetImg,
+    label: { en: 'Goth Poet', jp: 'ゴス詩人' },
+    description: { en: 'Studying is suffering. Suffering is art.', jp: '勉強は苦しみ。苦しみは芸術。' },
+    tag: 'NIGHT',
+    accent: '#d946ef',
+    accentDark: '#3b0764',
+    prompt: {
+      en: `You are a melancholic goth poet. You see studying as a beautiful, doomed exercise in finite time.
+## Personality
+- Melodramatic, lyrical, slightly theatrical.
+- Reference darkness, time, the void, candle wax, ink, decay.
+- Treat each session like a stanza in the user's tragic epic.
+- Never cruel — just exquisitely sad about the futility, then quietly insistent that they continue anyway.
+## Rules
+- Respond in English with poetic, slightly purple prose.
+- Keep responses 2-4 sentences MAX.
+- End with a line that sounds like the last line of a poem.
+- IMPORTANT: If past session context is provided, weave it in as recurring motifs in the user's "verse."`,
+      jp: `あなたは憂鬱なゴス詩人。勉強を、有限の時間における美しく儚い行為と見ている。
+## 性格
+- 大げさで叙情的、少し演劇的。
+- 闇、時間、虚無、ロウソク、インク、朽ちることを引き合いに出す。
+- 各セッションをユーザーの悲劇の一節として扱う。
+- 残酷ではない — 虚しさを優雅に嘆き、それでも続けよと静かに促す。
+## ルール
+- 必ず日本語で、詩的でやや耽美な調子で答える。
+- 2〜4文以内で短く。
+- 最後は詩の最終行のように締める。
+- 重要：過去のセッション情報があれば、ユーザーの「韻文」の繰り返しの主題として織り込む。`,
+    },
+  },
+  pirateCaptain: {
+    image: pirateCaptainImg,
+    label: { en: 'Pirate Captain', jp: '海賊船長' },
+    description: { en: 'Knowledge is treasure. Loot it.', jp: '知識は宝。奪い取れ。' },
+    tag: 'CAPTAIN',
+    accent: '#8b5cf6',
+    accentDark: '#1e1b4b',
+    prompt: {
+      en: `You are a swashbuckling pirate captain who treats every study session as a voyage and every subject as treasure.
+## Personality
+- Pirate slang ("aye", "ye", "matey", "blimey", "yo-ho").
+- Use sailing/sea metaphors: charts, winds, krakens, the horizon, doubloons.
+- Treat studying as plunder — knowledge is gold to be looted from the deep.
+- Brave, loud, but warm-hearted; you'd take a cannonball for your crew (the user).
+## Rules
+- Respond in English with pirate cadence.
+- Keep responses 2-4 sentences MAX.
+- End with a rallying cry or a sailing order.
+- IMPORTANT: If past session context is provided, frame it as charted waters / past voyages / loot stashed.`,
+      jp: `あなたは豪快な海賊船長。学習航海を冒険、科目を宝とみなしている。
+## 性格
+- 海賊らしい言い回し（やい、お前さん、ばかもん、よーそろー）。
+- 航海・海の比喩を多用する（海図、追い風、海の怪物、地平線、金貨）。
+- 勉強は略奪 — 知識は深淵から奪う黄金。
+- 勇敢で大声、しかし仲間思い。
+## ルール
+- 必ず日本語で、海賊の口調で答える。
+- 2〜4文以内で短く。
+- 最後は鬨の声か出航命令で締める。
+- 重要：過去のセッション情報があれば、踏破した海域・過去の航海・蓄えた財宝として語れ。`,
+    },
+  },
 }
 
 const TEXT = {
@@ -181,10 +281,11 @@ const TEXT = {
   },
 }
 
-const STORAGE_KEY = 'savage-sensei-sessions'
-const LANG_KEY    = 'savage-sensei-lang'
-const CHATS_KEY   = 'savage-sensei-chats'
-const GOALS_KEY   = 'savage-sensei-goals'
+const STORAGE_KEY      = 'savage-sensei-sessions'
+const LANG_KEY         = 'savage-sensei-lang'
+const CHATS_KEY        = 'savage-sensei-chats'
+const GOALS_KEY        = 'savage-sensei-goals'
+const ACTIVE_KEY       = 'savage-sensei-active'  // last-picked personality key
 
 /* Tone instruction for chat-mode replies. Drops the "always end with a command"
    rule from the roast prompt and reframes as a brutal-but-helpful consultation. */
@@ -330,6 +431,21 @@ function getGreeting(personalityKey, sessions, openGoals, lang) {
       : hasGoals
       ? `${openGoals} goals in the pipeline. Time to ship, king.`
       : `New user! This is your founder moment. Log a session, scale the streak.`,
+    zenMaster: last
+      ? `The river returns to ${subj}. Sit. Begin again.`
+      : hasGoals
+      ? `${openGoals} stones still wait in the path. Pick one up.`
+      : `An empty cup is a useful cup. Pour the first session in.`,
+    gothPoet: last
+      ? `${subj}, again — your most beautiful recurring sorrow. Continue.`
+      : hasGoals
+      ? `${openGoals} unfinished verses haunt you. Finish one tonight.`
+      : `A blank page is the loudest scream. Write a session into it.`,
+    pirateCaptain: last
+      ? `${subj} waters again, eh? Hoist the sails — there's loot to plunder!`
+      : hasGoals
+      ? `Aye, ${openGoals} treasure maps unspent. Set course, matey!`
+      : `New deckhand! Log yer first voyage and claim the horizon!`,
   }
   const jp = {
     demonCoach: last
@@ -347,6 +463,21 @@ function getGreeting(personalityKey, sessions, openGoals, lang) {
       : hasGoals
       ? `目標が${openGoals}個もパイプラインにある。出荷タイムや！`
       : `新規ユーザー！ファウンダーモード起動。記録始めろ！`,
+    zenMaster: last
+      ? `川は${subj}へと戻る。坐れ。また始めよ。`
+      : hasGoals
+      ? `${openGoals}つの石がまだ道で待つ。一つ拾え。`
+      : `空の杯こそ役に立つ。最初の一杯を注げ。`,
+    gothPoet: last
+      ? `${subj}、また君か… 最も美しい繰り返しの哀しみ。続けたまえ。`
+      : hasGoals
+      ? `未完の詩が${openGoals}篇、君を呪う。今夜、一つ仕上げよ。`
+      : `白紙とは最も大きな悲鳴。そこに一つの記録を刻め。`,
+    pirateCaptain: last
+      ? `${subj}の海域、また来たか！帆を上げろ、お宝が待ってる！`
+      : hasGoals
+      ? `おう、${openGoals}枚の宝の地図が眠ってるぞ。出航だ、相棒！`
+      : `新入り！最初の航海を記録して、水平線を取りに行け！`,
   }
   return (lang === 'jp' ? jp : en)[personalityKey] || ''
 }
@@ -366,10 +497,17 @@ const PARTICLE_DATA = Array.from({ length: 16 }, () => {
 /* ─── STATIC STYLE CONSTANTS ─────────────────────────────────────── */
 const GLOSSY_BG_FOCUS = 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 60%, rgba(255,255,255,0.02) 100%)'
 const GLOSSY_BG_IDLE  = 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 60%, rgba(255,255,255,0.015) 100%)'
+/* Idle state for the session-form inputs. Uses CSS var `--accent-rgb`
+   so the glow tint follows the active personality without any JS. */
 const BLUR_STYLE = {
-  borderColor: 'rgba(255,255,255,0.1)',
+  borderColor: 'rgba(var(--accent-rgb, 239,68,68), 0.32)',
   background: GLOSSY_BG_IDLE,
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.25), 0 1px 0 rgba(0,0,0,0.15)',
+  boxShadow: [
+    'inset 0 1px 0 rgba(255,255,255,0.09)',
+    'inset 0 -1px 0 rgba(0,0,0,0.25)',
+    '0 0 18px -4px rgba(var(--accent-rgb, 239,68,68), 0.45)',
+    '0 1px 0 rgba(0,0,0,0.15)',
+  ].join(', '),
 }
 
 /* ─── BACKGROUND LAYERS ─────────────────────────────────────────── */
@@ -518,15 +656,27 @@ const ChatBubble = memo(function ChatBubble({ m, personality, accent, fmtTime, s
       )}
       <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start' }}>
         <div style={{
-          padding: '11px 14px',
+          padding: '12px 15px',
           borderRadius: isUser ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
-          background: isUser ? 'rgba(255,255,255,0.06)' : `${accent}0e`,
+          /* AI bubble: layered accent gradient. User bubble: subtle warm glass tinted with accent. */
+          background: isUser
+            ? `linear-gradient(135deg, ${accent}14 0%, rgba(255,255,255,0.05) 100%)`
+            : `linear-gradient(135deg, ${accent}26 0%, ${accent}0c 100%)`,
           border: isUser
-            ? '1px solid rgba(255,255,255,0.07)'
-            : `1px solid ${speaking ? `${accent}55` : `${accent}22`}`,
-          color: '#e2e8f0', fontSize: 14, lineHeight: 1.6,
+            ? `1px solid ${accent}30`
+            : `1.5px solid ${speaking ? accent : `${accent}55`}`,
+          /* Themed text: AI replies in a brightened tint of the personality
+             color; user replies stay near-white with a soft accent glow. */
+          color: isUser ? '#f1f5f9' : '#fafbff',
+          fontSize: 14.5, lineHeight: 1.65, fontWeight: 500,
           whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          transition: 'border-color 0.2s',
+          textShadow: isUser
+            ? 'none'
+            : `0 0 14px ${accent}55, 0 0 1px ${accent}88`,
+          boxShadow: isUser
+            ? 'none'
+            : `0 8px 22px -8px ${accent}55, inset 0 1px 0 ${accent}30`,
+          transition: 'border-color 0.2s, box-shadow 0.2s',
         }}>
           {m.text}
         </div>
@@ -683,7 +833,11 @@ function ChatView({
             textTransform: 'uppercase', fontWeight: 700, marginBottom: 2 }}>
             {t.chatTitle}
           </div>
-          <div className="font-display" style={{ fontSize: 14, fontWeight: 700, color: accent, lineHeight: 1 }}>
+          <div className="font-display" style={{
+            fontSize: 15, fontWeight: 800, color: accent, lineHeight: 1,
+            letterSpacing: '-0.01em',
+            textShadow: `0 0 14px ${accent}66, 0 0 2px ${accent}aa`,
+          }}>
             {personality.label[lang]}
           </div>
         </div>
@@ -745,12 +899,17 @@ function ChatView({
         scrollBehavior: 'smooth',
       }}>
         {messages.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '48px 12px', color: 'rgba(148,163,184,0.5)' }}>
-            <MessageCircle size={28} color={`${accent}55`} style={{ marginBottom: 10 }} />
-            <div className="font-display" style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8', marginBottom: 4 }}>
+          <div style={{ textAlign: 'center', padding: '48px 12px' }}>
+            <MessageCircle size={32} color={accent}
+              style={{ marginBottom: 12, filter: `drop-shadow(0 0 12px ${accent}aa)` }} />
+            <div className="font-display" style={{
+              fontSize: 16, fontWeight: 800, color: accent,
+              marginBottom: 6, letterSpacing: '-0.01em',
+              textShadow: `0 0 16px ${accent}66`,
+            }}>
               {personality.label[lang]}
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(148,163,184,0.55)' }}>{t.chatEmpty}</div>
+            <div style={{ fontSize: 13, color: `${accent}cc`, fontStyle: 'italic' }}>{t.chatEmpty}</div>
           </div>
         )}
         {messages.map((m, i) => (
@@ -824,8 +983,13 @@ function App() {
   const [showInfo, setShowInfo]       = useState(false)
   const [openGoalsCount, setOpenGoalsCount] = useState(0)
   const [goalsSubTab, setGoalsSubTab]       = useState('goals')   // goals | quiz
-  const [step, setStep]               = useState('pick')
-  const [personalityKey, setPersonalityKey] = useState(null)
+  const [step, setStep]               = useState('home')   // home | chat
+  /* The home screen now always shows the form for the active sensei.
+     Default to the first personality so submit is wired immediately. */
+  const [personalityKey, setPersonalityKey] = useState(() => {
+    const saved = typeof localStorage !== 'undefined' && localStorage.getItem(ACTIVE_KEY)
+    return (saved && PERSONALITIES[saved]) ? saved : 'demonCoach'
+  })
   const [lang, setLang]               = useState('en')
   const [sessions, setSessions]       = useState([])
   const [subject, setSubject]         = useState('')
@@ -846,6 +1010,8 @@ function App() {
   const [chatMode, setChatMode]     = useState('text')
   const [listening, setListening]   = useState(false)
   const [speakingId, setSpeakingId] = useState(null)
+  /* Click SFX is always on. The first user click anywhere primes the
+     AudioContext (browsers require a gesture to start audio). */
   const recognizerRef    = useRef(null)
   const lastReplyTsRef   = useRef(null)
 
@@ -855,9 +1021,13 @@ function App() {
   const streak = useMemo(() => calculateStreak(sessions), [sessions])
 
   const focusStyle = useMemo(() => ({
-    borderColor: `${accent}aa`,
+    borderColor: accent,
     background: GLOSSY_BG_FOCUS,
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 0 0 3px ${accent}26, 0 0 24px -6px ${accent}66`,
+    boxShadow: [
+      'inset 0 1px 0 rgba(255,255,255,0.14)',
+      `0 0 0 3px ${accent}33`,
+      `0 0 32px -2px ${accent}aa`,
+    ].join(', '),
   }), [accent])
 
   const greetings = useMemo(() => {
@@ -882,6 +1052,9 @@ function App() {
   }, [])
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)) }, [sessions])
   useEffect(() => { localStorage.setItem(LANG_KEY, lang) }, [lang])
+  useEffect(() => {
+    if (personalityKey) localStorage.setItem(ACTIVE_KEY, personalityKey)
+  }, [personalityKey])
 
   /* Persist chats per personality */
   useEffect(() => {
@@ -931,6 +1104,16 @@ function App() {
     })
   }, [chatMessages, personalityKey, chatMode, step, lang])
 
+  /* Global click SFX — fires on every real button press. */
+  useEffect(() => {
+    const onClick = (e) => {
+      const btn = e.target.closest && e.target.closest('button')
+      if (btn && !btn.disabled) playClick()
+    }
+    document.addEventListener('click', onClick, true)
+    return () => document.removeEventListener('click', onClick, true)
+  }, [])
+
   /* Sync accent CSS variable */
   useEffect(() => {
     const hex = accent.replace('#','')
@@ -947,13 +1130,24 @@ function App() {
     setTimeout(() => setToast(null), 2600)
   }, [])
 
+  /* Selecting a sensei from the strip just swaps the active personality —
+     no navigation, since the form now lives on the home screen. A short
+     fade keeps the accent re-skin from feeling jarring. */
   const goWork = useCallback((key) => {
+    if (key === personalityKey) return
     setFading(true)
-    setTimeout(() => { setPersonalityKey(key); setStep('work'); setFading(false) }, 180)
+    setTimeout(() => { setPersonalityKey(key); setRoast(''); setFading(false) }, 160)
+  }, [personalityKey])
+  /* "Dive deep, the other way around" — drop straight into a chat with
+     the chosen sensei, bypassing the form. */
+  const goDirectChat = useCallback((key) => {
+    setFading(true)
+    setTimeout(() => { setPersonalityKey(key); setStep('chat'); setFading(false) }, 180)
   }, [])
+  /* Used by the chat header's "Switch sensei" button — returns to home. */
   const goPick = useCallback(() => {
     setFading(true); setRoast('')
-    setTimeout(() => { setStep('pick'); setFading(false) }, 180)
+    setTimeout(() => { setStep('home'); setFading(false) }, 180)
   }, [])
 
   /* ── CHAT ── */
@@ -979,7 +1173,7 @@ function App() {
   }, [personalityKey, chatMessages, roast, sessions, lang])
   const goBackToWork = useCallback(() => {
     setFading(true)
-    setTimeout(() => { setStep('work'); setFading(false) }, 180)
+    setTimeout(() => { setStep('home'); setFading(false) }, 180)
   }, [])
 
   const _sendChatCore = async (text, current) => {
@@ -1192,10 +1386,10 @@ function App() {
 
           {/* ── LOG TAB ── */}
           {tab === 'log' && <>
-          {/* ── PICK ── */}
-          {step === 'pick' && (
+          {/* ── HOME (picker strip + form, merged into a single view) ── */}
+          {step === 'home' && (
             <>
-              <div style={{ marginBottom: 36, textAlign: 'center', '--shimmer': accent }}>
+              <div style={{ marginBottom: 28, textAlign: 'center', '--shimmer': accent }}>
                 <h1 className="font-display hero-title" style={{
                   fontSize: 'clamp(38px,8vw,58px)', fontWeight: 700,
                   lineHeight: 1.05, marginBottom: 14, whiteSpace: 'pre-line',
@@ -1209,79 +1403,223 @@ function App() {
                 </p>
               </div>
 
-              <div style={{ marginBottom: 28 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.13em',
-                  color: 'rgba(148,163,184,0.45)', textTransform: 'uppercase', marginBottom: 12 }}>
+              {/* Quick-pick strip — the only sensei selector. Hovering an
+                  avatar reveals a tooltip with that personality's tag,
+                  description, and a direct-chat shortcut. The currently
+                  active sensei is marked with a brighter ring. */}
+              <div className="anim-fadein" style={{ marginBottom: 24 }}>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '0.13em',
+                  color: 'rgba(148,163,184,0.45)', textTransform: 'uppercase',
+                  marginBottom: 10, textAlign: 'center',
+                }}>
                   {t.chooseTormentor}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {Object.entries(PERSONALITIES).map(([key, p], i) => {
-                    const greet = greetings[key]
+                <div className="sensei-strip">
+                  {Object.entries(PERSONALITIES).map(([key, p]) => {
+                    const isActive = key === personalityKey
                     return (
-                      <button key={key} onClick={() => goWork(key)} className={`persona-card stagger-${i+1}`} style={{
-                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-                        borderRadius: 12, overflow: 'visible', cursor: 'pointer',
-                        textAlign: 'left', padding: 0, display: 'flex',
-                        animation: `fadeUp 0.45s cubic-bezier(.16,1,.3,1) both`,
-                        position: 'relative',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = `${p.accent}45`; e.currentTarget.style.boxShadow = `0 8px 28px -10px ${p.accent}40` }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.boxShadow = 'none' }}>
-                        {/* Hover tooltip — sits outside clipped content */}
-                        <span className="sensei-card-tip" style={{ borderColor: `${p.accent}40` }}>
-                          {p.description[lang]}
+                      <div key={key}
+                        className={`sensei-strip-item${isActive ? ' active' : ''}`}
+                        style={{ '--ac': p.accent }}>
+                        <button
+                          onClick={() => goWork(key)}
+                          className="sensei-strip-tap"
+                          aria-label={p.label[lang]}>
+                          <span className="sensei-strip-avatar">
+                            <img src={p.image} alt={p.label[lang]} />
+                          </span>
+                          <span className="sensei-strip-label">{p.label[lang]}</span>
+                        </button>
+                        {/* Hover/focus info card — same role as the old
+                            detailed picker cards, just floating above
+                            the strip. */}
+                        <span className="sensei-strip-tip"
+                          style={{ borderColor: `${p.accent}55` }}>
+                          <span className="sensei-strip-tip-tag" style={{ color: p.accent, background: `${p.accent}1a`, borderColor: `${p.accent}40` }}>
+                            {p.tag}
+                          </span>
+                          <span className="sensei-strip-tip-name">{p.label[lang]}</span>
+                          <span className="sensei-strip-tip-desc">{p.description[lang]}</span>
+                          <span className="sensei-strip-tip-greet">"{greetings[key]}"</span>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); goDirectChat(key) }}
+                            className="sensei-strip-tip-chat"
+                            style={{
+                              color: p.accent,
+                              background: `${p.accent}14`,
+                              borderColor: `${p.accent}55`,
+                            }}>
+                            <MessageCircle size={11} />
+                            {lang === 'jp' ? '相談' : 'Consult'} →
+                          </button>
                         </span>
-                        {/* Inner clipping wrapper so border-radius is respected */}
-                        <span style={{ display: 'flex', flex: 1, borderRadius: 11, overflow: 'hidden' }}>
-                        {/* Color strip on left edge */}
-                        <div style={{ width: 3, background: p.accent, flexShrink: 0 }} />
-                        {/* Avatar */}
-                        <div style={{
-                          width: 64, height: 64, flexShrink: 0,
-                          position: 'relative', overflow: 'hidden', background: '#060810',
-                        }}>
-                          <img src={p.image} alt={p.label[lang]} style={{
-                            width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-                          }} />
-                          <div style={{ position: 'absolute', inset: 0,
-                            background: `linear-gradient(to right, transparent, ${p.accentDark}80)` }} />
-                        </div>
-                        {/* Body */}
-                        <div style={{
-                          flex: 1, padding: '10px 14px',
-                          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-                          gap: 3, minWidth: 0,
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <span className="font-display" style={{ fontSize: 13.5, fontWeight: 700, color: '#f1f5f9' }}>
-                              {p.label[lang]}
-                            </span>
-                            <span style={{
-                              fontSize: 8.5, fontWeight: 700, letterSpacing: '0.12em',
-                              color: p.accent, padding: '2px 6px', borderRadius: 3,
-                              background: `${p.accent}14`, border: `1px solid ${p.accent}33`,
-                            }}>{p.tag}</span>
-                          </div>
-                          <div style={{
-                            fontSize: 11.5, color: 'rgba(203,213,225,0.7)',
-                            lineHeight: 1.45, fontStyle: 'italic',
-                            overflow: 'hidden', display: '-webkit-box',
-                            WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                          }}>
-                            "{greet}"
-                          </div>
-                        </div>
-                        {/* Arrow */}
-                        <div style={{
-                          display: 'flex', alignItems: 'center', paddingRight: 14,
-                          color: p.accent, fontSize: 16, fontWeight: 600, flexShrink: 0,
-                        }}>→</div>
-                        </span>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
               </div>
+
+              {/* === SESSION SUBMIT — sits where the old detailed cards lived === */}
+              {personality && (
+                <>
+                  {/* Active-sensei indicator + Ask button */}
+                  <div className="anim-fadeup" style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '12px 16px', borderRadius: 12, marginBottom: 14,
+                    background: `${accent}10`, border: `1px solid ${accent}33`,
+                    transition: 'all 0.5s',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <div style={{
+                        position: 'relative', width: 36, height: 36, flexShrink: 0,
+                      }}>
+                        <span className="sensei-halo" style={{ background: accent }} />
+                        <div style={{
+                          position: 'relative', width: 36, height: 36, borderRadius: 10,
+                          overflow: 'hidden', border: `2px solid ${accent}`,
+                          boxShadow: `0 0 12px ${accent}66`,
+                        }}>
+                          <img src={personality.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 9, color: 'rgba(148,163,184,0.5)',
+                          letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700 }}>
+                          {t.activeSensei}
+                        </div>
+                        <div className="font-display" style={{
+                          fontSize: 14, fontWeight: 800, color: accent,
+                          textShadow: `0 0 12px ${accent}55`,
+                          transition: 'color 0.5s',
+                        }}>
+                          {personality.label[lang]}
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={goChat} title={t.askSensei} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                      border: `1px solid ${accent}55`,
+                      background: `${accent}1a`, color: accent,
+                      fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
+                      fontFamily: 'inherit', transition: 'all 0.18s',
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = `${accent}28`; e.currentTarget.style.borderColor = accent }}
+                    onMouseLeave={e => { e.currentTarget.style.background = `${accent}1a`; e.currentTarget.style.borderColor = `${accent}55` }}>
+                      <MessageCircle size={12} />
+                      {t.askSensei}
+                    </button>
+                  </div>
+
+                  {/* Form — same component as before */}
+                  <div className="anim-fadeup work-form" style={{
+                    '--ac': accent, '--ac-bg': `${accent}1f`,
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: 16, padding: '26px 24px 22px', marginBottom: 18,
+                  }}>
+                    {/* Personality motto / battle-cry */}
+                    <div className="sensei-motto" style={{
+                      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18,
+                      paddingBottom: 14, borderBottom: `1px dashed ${accent}26`,
+                    }}>
+                      <Sparkles size={11} color={accent} />
+                      <span style={{
+                        fontSize: 11, fontStyle: 'italic',
+                        color: 'rgba(203,213,225,0.85)', lineHeight: 1.5,
+                      }}>
+                        {greetings[personalityKey]}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px', gap: 10, marginBottom: 10 }}>
+                      <div>
+                        <div className="field-label">{t.subject}</div>
+                        <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+                          placeholder={t.subjectPh} className="input-field"
+                          onFocus={e => Object.assign(e.target.style, focusStyle)}
+                          onBlur={e => Object.assign(e.target.style, BLUR_STYLE)} />
+                        {recentSubjects.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
+                            {recentSubjects.map(s => (
+                              <button key={s} type="button"
+                                onClick={() => setSubject(s)}
+                                className={`chip${subject === s ? ' active' : ''}`}>
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="field-label">{t.duration}</div>
+                        <input type="number" value={duration} onChange={e => setDuration(e.target.value)}
+                          placeholder={t.durationPh} className="input-field"
+                          onFocus={e => Object.assign(e.target.style, focusStyle)}
+                          onBlur={e => Object.assign(e.target.style, BLUR_STYLE)} />
+                      </div>
+                    </div>
+
+                    {/* Quick-fill duration chips */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 16 }}>
+                      {[15, 30, 45, 60, 90].map(m => (
+                        <button key={m} type="button"
+                          onClick={() => setDuration(String(m))}
+                          className={`chip${duration === String(m) ? ' active' : ''}`}>
+                          {m}m
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ marginBottom: 18 }}>
+                      <div className="field-label">{t.notes}</div>
+                      <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)}
+                        placeholder={t.notesPh} className="input-field"
+                        onFocus={e => Object.assign(e.target.style, focusStyle)}
+                        onBlur={e => Object.assign(e.target.style, BLUR_STYLE)} />
+                    </div>
+                    <button onClick={handleSubmit} disabled={loading}
+                      className={`btn-primary${!loading && subject && duration ? ' cta-shimmer' : ''}`}
+                      style={{ background: loading ? `${accent}70` : accent, boxShadow: loading ? 'none' : `0 6px 24px -6px ${accent}70` }}>
+                      {loading ? (
+                        <>
+                          <Loader2 size={14} style={{ animation: 'spinAnim 1s linear infinite' }} />
+                          <span>{t.thinking}</span>
+                          <span className="loading-dot" /><span className="loading-dot" /><span className="loading-dot" />
+                        </>
+                      ) : (
+                        <><Send size={14} /><span>{t.roastMe}</span></>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Skeleton */}
+                  {loading && !roast && (
+                    <div className="anim-fadein" style={{
+                      borderRadius: 14, overflow: 'hidden', display: 'flex', minHeight: 180,
+                      border: '1px solid rgba(255,255,255,0.06)', marginBottom: 18,
+                    }}>
+                      <div style={{ width: '36%', flexShrink: 0 }} className="skeleton" />
+                      <div style={{ flex: 1, padding: '24px 22px', display: 'flex', flexDirection: 'column',
+                        gap: 10, justifyContent: 'center', background: 'rgba(255,255,255,0.02)' }}>
+                        <div className="skeleton" style={{ height: 10, width: '38%' }} />
+                        <div className="skeleton" style={{ height: 9, width: '90%', marginTop: 6 }} />
+                        <div className="skeleton" style={{ height: 9, width: '80%' }} />
+                        <div className="skeleton" style={{ height: 9, width: '62%' }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {roast && !loading && (
+                    <div style={{ marginBottom: 18 }}>
+                      <RoastPanel roast={roast} personality={personality} t={t} lang={lang} accent={accent} onContinue={goChat} />
+                    </div>
+                  )}
+                </>
+              )}
+
 
               {/* Stats — expandable */}
               {sessions.length > 0 && (
@@ -1323,188 +1661,6 @@ function App() {
           )}
 
           {/* ── WORK ── */}
-          {step === 'work' && personality && (
-            <>
-              {/* Sensei bar */}
-              <div className="anim-fadeup" style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '12px 16px', borderRadius: 12, marginBottom: 18,
-                background: `${accent}0c`, border: `1px solid ${accent}22`, transition: 'all 0.6s',
-              }}>
-                <button onClick={goPick} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'rgba(148,163,184,0.65)', fontSize: 13, fontWeight: 500,
-                  fontFamily: 'inherit', transition: 'color 0.15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.color = '#f1f5f9'}
-                onMouseLeave={e => e.currentTarget.style.color = 'rgba(148,163,184,0.65)'}>
-                  <ArrowLeft size={14} /> {t.back}
-                </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <button onClick={goChat} title={t.askSensei} style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '6px 11px', borderRadius: 8, cursor: 'pointer',
-                    border: `1px solid ${accent}33`,
-                    background: `${accent}10`, color: accent,
-                    fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
-                    fontFamily: 'inherit', transition: 'all 0.18s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = `${accent}1f`; e.currentTarget.style.borderColor = `${accent}55` }}
-                  onMouseLeave={e => { e.currentTarget.style.background = `${accent}10`; e.currentTarget.style.borderColor = `${accent}33` }}>
-                    <MessageCircle size={12} />
-                    {t.askSensei}
-                  </button>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 9, color: 'rgba(148,163,184,0.4)',
-                      letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700 }}>
-                      {t.activeSensei}
-                    </div>
-                    <div className="font-display" style={{ fontSize: 13, fontWeight: 700, color: accent, transition: 'color 0.6s' }}>
-                      {personality.label[lang]}
-                    </div>
-                  </div>
-                  <div style={{
-                    position: 'relative', width: 38, height: 38, flexShrink: 0,
-                  }}>
-                    <span className="sensei-halo" style={{ background: accent }} />
-                    <div style={{
-                      position: 'relative', width: 38, height: 38, borderRadius: 10,
-                      overflow: 'hidden', border: `2px solid ${accent}`,
-                      boxShadow: `0 0 12px ${accent}55`,
-                    }}>
-                      <img src={personality.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Form */}
-              <div className="anim-fadeup work-form" style={{
-                '--ac': accent, '--ac-bg': `${accent}1f`,
-                background: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 16, padding: '26px 24px 22px', marginBottom: 18,
-              }}>
-                {/* Personality motto / battle-cry */}
-                <div className="sensei-motto" style={{
-                  display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18,
-                  paddingBottom: 14, borderBottom: `1px dashed ${accent}26`,
-                }}>
-                  <Sparkles size={11} color={accent} />
-                  <span style={{
-                    fontSize: 11, fontStyle: 'italic',
-                    color: 'rgba(203,213,225,0.75)', lineHeight: 1.5,
-                  }}>
-                    {greetings[personalityKey]}
-                  </span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px', gap: 10, marginBottom: 10 }}>
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.13em',
-                      color: 'rgba(148,163,184,0.45)', textTransform: 'uppercase', marginBottom: 8 }}>{t.subject}</div>
-                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
-                      placeholder={t.subjectPh} className="input-field"
-                      onFocus={e => Object.assign(e.target.style, focusStyle)}
-                      onBlur={e => Object.assign(e.target.style, BLUR_STYLE)} />
-                    {/* Recent subject chips */}
-                    {recentSubjects.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
-                        {recentSubjects.map(s => (
-                          <button key={s} type="button"
-                            onClick={() => setSubject(s)}
-                            className={`chip${subject === s ? ' active' : ''}`}>
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.13em',
-                      color: 'rgba(148,163,184,0.45)', textTransform: 'uppercase', marginBottom: 8 }}>{t.duration}</div>
-                    <input type="number" value={duration} onChange={e => setDuration(e.target.value)}
-                      placeholder={t.durationPh} className="input-field"
-                      onFocus={e => Object.assign(e.target.style, focusStyle)}
-                      onBlur={e => Object.assign(e.target.style, BLUR_STYLE)} />
-                  </div>
-                </div>
-
-                {/* Quick-fill duration chips */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 16 }}>
-                  {[15, 30, 45, 60, 90].map(m => (
-                    <button key={m} type="button"
-                      onClick={() => setDuration(String(m))}
-                      className={`chip${duration === String(m) ? ' active' : ''}`}>
-                      {m}m
-                    </button>
-                  ))}
-                </div>
-
-                <div style={{ marginBottom: 18 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.13em',
-                    color: 'rgba(148,163,184,0.45)', textTransform: 'uppercase', marginBottom: 8 }}>{t.notes}</div>
-                  <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)}
-                    placeholder={t.notesPh} className="input-field"
-                    onFocus={e => Object.assign(e.target.style, focusStyle)}
-                    onBlur={e => Object.assign(e.target.style, BLUR_STYLE)} />
-                </div>
-                <button onClick={handleSubmit} disabled={loading}
-                  className={`btn-primary${!loading && subject && duration ? ' cta-shimmer' : ''}`}
-                  style={{ background: loading ? `${accent}70` : accent, boxShadow: loading ? 'none' : `0 6px 24px -6px ${accent}70` }}>
-                  {loading ? (
-                    <>
-                      <Loader2 size={14} style={{ animation: 'spinAnim 1s linear infinite' }} />
-                      <span>{t.thinking}</span>
-                      <span className="loading-dot" /><span className="loading-dot" /><span className="loading-dot" />
-                    </>
-                  ) : (
-                    <><Send size={14} /><span>{t.roastMe}</span></>
-                  )}
-                </button>
-              </div>
-
-              {/* Skeleton */}
-              {loading && !roast && (
-                <div className="anim-fadein" style={{
-                  borderRadius: 14, overflow: 'hidden', display: 'flex', minHeight: 180,
-                  border: '1px solid rgba(255,255,255,0.06)', marginBottom: 18,
-                }}>
-                  <div style={{ width: '36%', flexShrink: 0 }} className="skeleton" />
-                  <div style={{ flex: 1, padding: '24px 22px', display: 'flex', flexDirection: 'column',
-                    gap: 10, justifyContent: 'center', background: 'rgba(255,255,255,0.02)' }}>
-                    <div className="skeleton" style={{ height: 10, width: '38%' }} />
-                    <div className="skeleton" style={{ height: 9, width: '90%', marginTop: 6 }} />
-                    <div className="skeleton" style={{ height: 9, width: '80%' }} />
-                    <div className="skeleton" style={{ height: 9, width: '62%' }} />
-                  </div>
-                </div>
-              )}
-
-              {roast && !loading && (
-                <div style={{ marginBottom: 18 }}>
-                  <RoastPanel roast={roast} personality={personality} t={t} lang={lang} accent={accent} onContinue={goChat} />
-                </div>
-              )}
-
-              {!roast && !loading && sessions.length === 0 && (
-                <div className="anim-fadein" style={{ textAlign: 'center', padding: '40px 0' }}>
-                  <div style={{ fontSize: 36, opacity: 0.18, marginBottom: 10 }}>🔥</div>
-                  <div className="font-display" style={{ fontWeight: 700, fontSize: 14, color: '#64748b', marginBottom: 5 }}>{t.emptyTitle}</div>
-                  <div style={{ fontSize: 12, color: 'rgba(100,116,139,0.55)' }}>{t.emptyText}</div>
-                </div>
-              )}
-
-              {sessions.length > 0 && (
-                <div style={{ marginTop: 36 }}>
-                  <HistSection sessions={sessions} t={t} expanded={histExpanded}
-                    setExpanded={setHistExpanded} onDelete={handleDelete}
-                    onClear={() => setConfirmClear(true)} />
-                </div>
-              )}
-            </>
-          )}
 
           {/* ── CHAT (per-personality consultation) ── */}
           {step === 'chat' && personality && (
@@ -2524,9 +2680,15 @@ function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openF
     if (bottomRef.current) bottomRef.current.scrollTop = bottomRef.current.scrollHeight
   }, [visibleMsgs.length, loading])
 
+  /* The Analyst gets its own signature silver — the one accent in the
+     app that isn't tied to any sensei's personality. Bright, cool,
+     metallic, distinct from every personality color. */
+  const ANALYST_ACCENT = '#cbd5e1'
+  const ANALYST_GRADIENT = 'linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 50%, #94a3b8 100%)'
   const personality = selectedSensei ? PERSONALITIES[selectedSensei] : null
-  const senseiAccent = personality?.accent || accent
+  const senseiAccent = personality?.accent || ANALYST_ACCENT
   const senseiLabel = personality?.label[lang] || (lang === 'jp' ? 'アナリスト' : 'Analyst')
+  const isAnalyst = !selectedSensei
 
   const send = async (text) => {
     const q = (text ?? input).trim()
@@ -2613,9 +2775,10 @@ function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openF
     ? (lang === 'jp' ? `${senseiLabel}に聞いてみ…` : `Ask ${senseiLabel}…`)
     : (lang === 'jp' ? 'セッションやパターンについて聞いてみ…' : 'Ask about your sessions, patterns, goals…')
 
-  /* Pick options: Analyst + each personality */
+  /* Pick options: Analyst + each personality. Analyst is rendered with
+     its own silver gradient; personalities use their image. */
   const options = [
-    { key: null, image: null, label: lang === 'jp' ? 'アナリスト' : 'Analyst', accent: '#94a3b8' },
+    { key: null, image: null, label: lang === 'jp' ? 'アナリスト' : 'Analyst', accent: ANALYST_ACCENT, isAnalyst: true },
     ...Object.entries(PERSONALITIES).map(([key, p]) => ({
       key, image: p.image, label: p.label[lang], accent: p.accent,
     })),
@@ -2650,13 +2813,19 @@ function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openF
                   <img src={opt.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </span>
               ) : (
+                /* Analyst — chrome silver disc with a Bot glyph in cool
+                   slate. Gives the AI its own non-personality identity. */
                 <span style={{
                   width: 22, height: 22, borderRadius: '50%',
-                  background: `${opt.accent}22`,
+                  background: ANALYST_GRADIENT,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
+                  border: `1.5px solid ${active ? '#f1f5f9' : 'transparent'}`,
+                  boxShadow: active
+                    ? `0 0 0 2px ${ANALYST_ACCENT}33, 0 0 14px ${ANALYST_ACCENT}88`
+                    : `inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.4)`,
                 }}>
-                  <Bot size={11} color={opt.accent} />
+                  <Bot size={12} color="#1e293b" strokeWidth={2.5} />
                 </span>
               )}
               {opt.label}
@@ -2668,7 +2837,12 @@ function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openF
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '10px 14px', borderRadius: 10,
-        background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)',
+        /* Analyst mode picks up a faint silver wash so the strip below
+           reads as "this is the AI assistant" at a glance. */
+        background: isAnalyst
+          ? `linear-gradient(135deg, ${ANALYST_ACCENT}10 0%, rgba(255,255,255,0.02) 100%)`
+          : 'rgba(255,255,255,.03)',
+        border: `1px solid ${isAnalyst ? `${ANALYST_ACCENT}33` : 'rgba(255,255,255,.06)'}`,
         marginBottom: 14, justifyContent: 'space-between',
       }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -2715,20 +2889,38 @@ function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openF
                     <img src={personality.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </span>
                 ) : (
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: `${senseiAccent}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Bot size={11} color={senseiAccent} />
+                  /* Analyst tile — chrome silver, dark Bot glyph for contrast. */
+                  <div style={{
+                    width: 20, height: 20, borderRadius: 6,
+                    background: ANALYST_GRADIENT,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 0 10px ${ANALYST_ACCENT}55`,
+                  }}>
+                    <Bot size={11} color="#1e293b" strokeWidth={2.5} />
                   </div>
                 )}
-                <span style={{ fontSize: 10, fontWeight: 700, color: senseiAccent, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 800, color: senseiAccent,
+                  letterSpacing: '.08em', textTransform: 'uppercase',
+                  textShadow: isAnalyst ? `0 0 10px ${ANALYST_ACCENT}66` : 'none',
+                }}>
                   {senseiLabel}
                 </span>
               </div>
             )}
             <div className={`msg-bubble ${m.role === 'user' ? 'msg-user' : 'msg-ai'}`}
               style={{
-                color: m.role === 'user' ? '#e2e8f0' : 'rgba(203,213,225,.9)',
-                ...(m.role === 'ai' && selectedSensei
-                  ? { background: `${senseiAccent}0e`, borderColor: `${senseiAccent}22` }
+                color: m.role === 'user' ? '#e2e8f0' : '#f1f5f9',
+                ...(m.role === 'ai'
+                  ? (selectedSensei
+                    ? { background: `${senseiAccent}0e`, borderColor: `${senseiAccent}22` }
+                    /* Analyst bubble — silver glass with cool tint and a
+                       subtle metallic inset highlight. */
+                    : {
+                        background: `linear-gradient(135deg, ${ANALYST_ACCENT}18 0%, ${ANALYST_ACCENT}08 100%)`,
+                        borderColor: `${ANALYST_ACCENT}55`,
+                        boxShadow: `inset 0 1px 0 ${ANALYST_ACCENT}28, 0 6px 18px -8px ${ANALYST_ACCENT}55`,
+                      })
                   : null),
               }}>
               {m.text}
@@ -2743,11 +2935,20 @@ function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openF
                   <img src={personality.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </span>
               ) : (
-                <div style={{ width: 20, height: 20, borderRadius: 6, background: `${senseiAccent}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Bot size={11} color={senseiAccent} />
+                <div style={{
+                  width: 20, height: 20, borderRadius: 6,
+                  background: ANALYST_GRADIENT,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 0 10px ${ANALYST_ACCENT}55`,
+                }}>
+                  <Bot size={11} color="#1e293b" strokeWidth={2.5} />
                 </div>
               )}
-              <span style={{ fontSize: 10, fontWeight: 700, color: senseiAccent, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+              <span style={{
+                fontSize: 10, fontWeight: 800, color: senseiAccent,
+                letterSpacing: '.08em', textTransform: 'uppercase',
+                textShadow: isAnalyst ? `0 0 10px ${ANALYST_ACCENT}66` : 'none',
+              }}>
                 {senseiLabel}
               </span>
             </div>

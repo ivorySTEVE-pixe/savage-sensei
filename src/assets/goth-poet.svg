@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="0.55" cy="0.35" r="0.85">
+      <stop offset="0%" stop-color="#581c87"/>
+      <stop offset="55%" stop-color="#2e1065"/>
+      <stop offset="100%" stop-color="#0a0014"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <!-- crescent moon -->
+  <path d="M 196 56 a 30 30 0 1 0 0 56 a 22 22 0 1 1 0 -56 z"
+        fill="#fde047" opacity="0.85"/>
+  <!-- hood silhouette -->
+  <path d="M 60 230
+           q -8 -90 68 -110
+           q 76 20 68 110 z"
+        fill="#1b002a" stroke="#d946ef" stroke-width="2" stroke-opacity="0.45"/>
+  <!-- pale face -->
+  <ellipse cx="128" cy="150" rx="32" ry="40" fill="#f3e8ff" opacity="0.96"/>
+  <!-- eye with heavy mascara -->
+  <path d="M 110 146 q 8 -6 16 0" stroke="#1b002a" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <ellipse cx="118" cy="151" rx="3" ry="2.5" fill="#1b002a"/>
+  <path d="M 132 146 q 8 -6 16 0" stroke="#1b002a" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <ellipse cx="140" cy="151" rx="3" ry="2.5" fill="#1b002a"/>
+  <!-- single tear -->
+  <path d="M 118 158 q -1 8 -2 14" stroke="#a78bfa" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- dark lipstick -->
+  <path d="M 120 168 q 9 6 18 0" stroke="#9f1239" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- rose at the throat -->
+  <circle cx="128" cy="200" r="9" fill="#d946ef"/>
+  <circle cx="128" cy="200" r="4" fill="#86198f"/>
+</svg>

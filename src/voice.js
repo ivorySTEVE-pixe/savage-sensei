@@ -16,9 +16,12 @@
    Voices are bilingual (24 languages incl. Japanese) so we don't need
    per-language entries — same voice handles EN + JP cleanly. */
 export const GEMINI_VOICES = {
-  demonCoach:  'Algenib',   // gravelly, mature male — drill sergeant bark
-  osakaAuntie: 'Sulafat',   // warm, mature female — auntie warmth
-  techBro:     'Puck',      // upbeat, energetic male — chipper bro
+  demonCoach:    'Algenib',     // gravelly, mature male — drill sergeant bark
+  osakaAuntie:   'Sulafat',     // warm, mature female — auntie warmth
+  techBro:       'Puck',        // upbeat, energetic male — chipper bro
+  zenMaster:     'Charon',      // deep, calm male — quiet authority
+  gothPoet:      'Aoede',       // soft, lyrical female — melancholic cadence
+  pirateCaptain: 'Orus',        // bold, theatrical male — bombastic captain
 }
 
 /* ─── STYLE PROMPTS (huge quality lift) ──────────────────────────── */
@@ -38,6 +41,18 @@ export const STYLE_PROMPTS = {
   techBro: {
     en: 'Say with the upbeat, over-caffeinated enthusiasm of a Silicon Valley startup bro recording a podcast intro — fast, punchy, all-in:',
     jp: 'シリコンバレーのスタートアップ兄貴がポッドキャストを録音しているような、過剰なテンションで、早口で、ノリノリで：',
+  },
+  zenMaster: {
+    en: 'Say in the slow, low, breathy voice of an old Zen master — measured pauses, quiet authority, never raised:',
+    jp: '老いた禅僧のように、ゆっくり、低く、息混じりに、静かな威厳をもって、決して声を荒げず：',
+  },
+  gothPoet: {
+    en: 'Say with the soft, melodramatic cadence of a goth poet reading their own verse aloud at midnight — wistful, theatrical, slightly haunted:',
+    jp: '真夜中に自作の詩を朗読するゴス詩人のように、もの悲しく、演劇的で、少し憑かれたような調子で：',
+  },
+  pirateCaptain: {
+    en: 'Say in the booming, theatrical bark of a swashbuckling pirate captain rallying a crew on deck — broad, hearty, full of bravado:',
+    jp: '甲板で乗組員を鼓舞する豪快な海賊船長のように、大声で、芝居がかって、堂々と：',
   },
 }
 
