@@ -9,6 +9,7 @@ import {
   Home, ChevronDown, ChevronUp, Brain,
 } from 'lucide-react'
 import { playClick } from './sound.js'
+import { isOnDeviceAvailable, extractStudySession } from './onDevice.js'
 import {
   speak, stopSpeaking, createRecognizer, loadVoices, unlockAudio,
   SR_SUPPORTED, TTS_SUPPORTED,
@@ -1012,6 +1013,15 @@ function App() {
   const [speakingId, setSpeakingId] = useState(null)
   /* Click SFX is always on. The first user click anywhere primes the
      AudioContext (browsers require a gesture to start audio). */
+
+  /* On-device LLM auto-fill state. `onDeviceReady` flips true once the
+     browser confirms it has a usable on-device model (Chrome's Prompt
+     API / Gemini Nano). When false, we still expose the feature but
+     fall back to a regex parser. */
+  const [onDeviceReady, setOnDeviceReady] = useState(false)
+  const [autoOpen, setAutoOpen]           = useState(false)
+  const [autoText, setAutoText]           = useState('')
+  const [autoBusy, setAutoBusy]           = useState(false)
   const recognizerRef    = useRef(null)
   const lastReplyTsRef   = useRef(null)
 
@@ -1065,6 +1075,10 @@ function App() {
 
   /* Pre-load TTS voices once */
   useEffect(() => { if (TTS_SUPPORTED) loadVoices() }, [])
+
+  /* Probe for an on-device LLM. Done once; result drives the badge in
+     the auto-log UI ("On-device" vs "Pattern match"). */
+  useEffect(() => { isOnDeviceAvailable().then(setOnDeviceReady) }, [])
 
   /* Refresh open-goal count when entering Home or after Goals tab activity */
   useEffect(() => {
@@ -1310,6 +1324,36 @@ function App() {
 
   const handleDelete = useCallback((id) => setSessions(s => s.filter(x => x.id !== id)), [])
 
+  /* Auto-log: take the user's free-text description, hand it to the
+     on-device model (or regex fallback), and populate the form. We
+     deliberately do NOT auto-submit — the user reviews the parsed
+     fields and presses Submit themselves. Safer if the model picks
+     the wrong topic or duration. */
+  const handleAutoExtract = useCallback(async () => {
+    const text = autoText.trim()
+    if (!text || autoBusy) return
+    setAutoBusy(true)
+    try {
+      const r = await extractStudySession(text)
+      if (r.subject)             setSubject(r.subject)
+      if (r.duration && r.duration > 0) setDuration(String(r.duration))
+      if (r.notes)               setNotes(r.notes)
+      setAutoOpen(false)
+      setAutoText('')
+      const localized = r.source === 'on-device'
+        ? (lang === 'jp' ? 'デバイス内AIで入力済み' : 'Filled via on-device AI')
+        : r.source === 'fallback'
+          ? (lang === 'jp' ? 'パターン解析で入力済み' : 'Filled via pattern match')
+          : (lang === 'jp' ? '入力するテキストがない' : 'Nothing to extract')
+      showToast(localized)
+    } catch (err) {
+      console.error('Auto-extract error:', err)
+      showToast(lang === 'jp' ? '解析に失敗' : 'Extraction failed')
+    } finally {
+      setAutoBusy(false)
+    }
+  }, [autoText, autoBusy, lang, showToast])
+
   /* focusStyle is memoized above; blurStyle is the module-level BLUR_STYLE constant. */
 
   return (
@@ -1431,29 +1475,11 @@ function App() {
                           </span>
                           <span className="sensei-strip-label">{p.label[lang]}</span>
                         </button>
-                        {/* Hover/focus info card — same role as the old
-                            detailed picker cards, just floating above
-                            the strip. */}
+                        {/* Hover description — slim tooltip, no panel.
+                            One line of personality description, that's it. */}
                         <span className="sensei-strip-tip"
                           style={{ borderColor: `${p.accent}55` }}>
-                          <span className="sensei-strip-tip-tag" style={{ color: p.accent, background: `${p.accent}1a`, borderColor: `${p.accent}40` }}>
-                            {p.tag}
-                          </span>
-                          <span className="sensei-strip-tip-name">{p.label[lang]}</span>
-                          <span className="sensei-strip-tip-desc">{p.description[lang]}</span>
-                          <span className="sensei-strip-tip-greet">"{greetings[key]}"</span>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); goDirectChat(key) }}
-                            className="sensei-strip-tip-chat"
-                            style={{
-                              color: p.accent,
-                              background: `${p.accent}14`,
-                              borderColor: `${p.accent}55`,
-                            }}>
-                            <MessageCircle size={11} />
-                            {lang === 'jp' ? '相談' : 'Consult'} →
-                          </button>
+                          {p.description[lang]}
                         </span>
                       </div>
                     )
@@ -1522,7 +1548,7 @@ function App() {
                   }}>
                     {/* Personality motto / battle-cry */}
                     <div className="sensei-motto" style={{
-                      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18,
+                      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14,
                       paddingBottom: 14, borderBottom: `1px dashed ${accent}26`,
                     }}>
                       <Sparkles size={11} color={accent} />
@@ -1532,6 +1558,84 @@ function App() {
                       }}>
                         {greetings[personalityKey]}
                       </span>
+                    </div>
+
+                    {/* === AUTO-LOG (on-device LLM) ===
+                        Lets the user describe their session in plain
+                        language; an on-device model (or regex fallback)
+                        pulls out topic / duration / notes and fills the
+                        form. Nothing is auto-submitted — user reviews. */}
+                    <div style={{ marginBottom: 14 }}>
+                      <button type="button"
+                        onClick={() => setAutoOpen(v => !v)}
+                        className="auto-log-toggle"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          width: '100%', padding: '9px 12px', borderRadius: 9,
+                          background: autoOpen ? `${accent}1a` : `${accent}0c`,
+                          border: `1px solid ${autoOpen ? `${accent}66` : `${accent}33`}`,
+                          color: accent, fontFamily: 'inherit',
+                          fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em',
+                          cursor: 'pointer',
+                          transition: 'all 0.18s',
+                        }}>
+                        <Sparkles size={12} />
+                        <span style={{ flex: 1, textAlign: 'left' }}>
+                          {lang === 'jp' ? 'AIで自動入力' : 'Auto-log with AI'}
+                        </span>
+                        <span className={`auto-log-badge ${onDeviceReady ? 'on' : 'off'}`}>
+                          {onDeviceReady
+                            ? (lang === 'jp' ? 'デバイス内' : 'On-device')
+                            : (lang === 'jp' ? 'パターン' : 'Pattern')}
+                        </span>
+                        {autoOpen
+                          ? <ChevronUp size={12} />
+                          : <ChevronDown size={12} />}
+                      </button>
+
+                      {autoOpen && (
+                        <div className="anim-fadein" style={{ marginTop: 8 }}>
+                          <textarea
+                            rows={2}
+                            value={autoText}
+                            onChange={e => setAutoText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                e.preventDefault(); handleAutoExtract()
+                              }
+                            }}
+                            placeholder={lang === 'jp'
+                              ? '例：「Pythonのasync/awaitを30分勉強した」'
+                              : 'e.g. "Studied Python async/await for 30 minutes"'}
+                            className="input-field"
+                            style={{ marginBottom: 8 }} />
+                          <button
+                            type="button"
+                            onClick={handleAutoExtract}
+                            disabled={autoBusy || !autoText.trim()}
+                            style={{
+                              width: '100%', padding: '10px 14px',
+                              borderRadius: 9, border: 'none',
+                              cursor: (autoBusy || !autoText.trim()) ? 'not-allowed' : 'pointer',
+                              background: (autoBusy || !autoText.trim())
+                                ? 'rgba(255,255,255,0.06)'
+                                : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                              color: (autoBusy || !autoText.trim()) ? 'rgba(148,163,184,0.5)' : 'white',
+                              fontFamily: 'inherit',
+                              fontSize: 12, fontWeight: 800, letterSpacing: '0.04em',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                              boxShadow: (autoBusy || !autoText.trim())
+                                ? 'none' : `0 6px 20px -6px ${accent}80`,
+                              transition: 'all 0.18s',
+                            }}>
+                            {autoBusy
+                              ? <><Loader2 size={13} style={{ animation: 'spinAnim 1s linear infinite' }} />
+                                  {lang === 'jp' ? '解析中…' : 'Extracting…'}</>
+                              : <><Sparkles size={13} />
+                                  {lang === 'jp' ? '解析して入力' : 'Extract & fill'}</>}
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px', gap: 10, marginBottom: 10 }}>

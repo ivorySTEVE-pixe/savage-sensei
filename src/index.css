@@ -527,6 +527,36 @@ body::after {
 .toast-enter { animation: toastIn  0.38s cubic-bezier(.16,1,.3,1) both; }
 .toast-exit  { animation: toastOut 0.26s ease-in both; }
 
+/* === AUTO-LOG BADGE ===
+   Tiny chip in the auto-log toggle. Green = the user's browser has
+   an on-device LLM (Chrome's Prompt API / Gemini Nano), so nothing
+   leaves the device. Amber = no on-device model; we use a regex
+   parser instead. */
+.auto-log-badge {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-family: var(--font-display);
+}
+.auto-log-badge.on {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.45);
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+.auto-log-badge.off {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+.auto-log-toggle:hover {
+  filter: brightness(1.1);
+}
+
 /* === HOME QUICK-PICK STRIP ===
    Horizontal scrollable row of all senseis. Each item is its own
    stacking context with an accent halo on hover/active. */
@@ -605,77 +635,41 @@ body::after {
   text-shadow: 0 0 10px var(--ac, #ef4444);
 }
 
-/* === STRIP HOVER TOOLTIP / INFO CARD ===
-   Floats above each avatar on hover/focus, mirroring the old
-   detailed-card content (tag, name, description, greeting) plus a
-   direct-chat shortcut. */
+/* === STRIP HOVER TOOLTIP ===
+   Slim one-line description. No panel, no buttons. Pointer-events
+   stay disabled so the tooltip never intercepts a tap. */
 .sensei-strip-tip {
   position: absolute;
-  left: 50%; top: calc(100% + 12px);
+  left: 50%; top: calc(100% + 8px);
   transform: translateX(-50%) translateY(-4px);
   z-index: 40;
-  width: max-content; max-width: 260px;
-  display: flex; flex-direction: column; gap: 6px;
-  padding: 12px 14px 11px;
-  border-radius: 12px;
+  width: max-content; max-width: 220px;
+  padding: 7px 11px;
+  border-radius: 8px;
   background: rgba(10, 13, 22, 0.97);
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow:
-    0 18px 40px -10px rgba(0,0,0,0.7),
-    0 0 0 1px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(226, 232, 240, 0.92);
+  font-size: 11px;
+  line-height: 1.4;
   text-align: center;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.7);
 }
 .sensei-strip-tip::before {
   content: '';
   position: absolute;
   left: 50%; bottom: 100%;
   transform: translateX(-50%);
-  border: 6px solid transparent;
+  border: 5px solid transparent;
   border-bottom-color: rgba(10, 13, 22, 0.97);
 }
 .sensei-strip-item:hover .sensei-strip-tip,
 .sensei-strip-item:focus-within .sensei-strip-tip {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
-  pointer-events: auto;
 }
-.sensei-strip-tip-tag {
-  align-self: center;
-  font-size: 9px; font-weight: 800; letter-spacing: 0.13em;
-  text-transform: uppercase;
-  padding: 3px 8px; border-radius: 4px;
-  border: 1px solid;
-}
-.sensei-strip-tip-name {
-  font-family: var(--font-display);
-  font-size: 13.5px; font-weight: 800; color: #f1f5f9;
-  letter-spacing: -0.01em;
-}
-.sensei-strip-tip-desc {
-  font-size: 11.5px; color: rgba(203,213,225,0.85);
-  line-height: 1.45;
-}
-.sensei-strip-tip-greet {
-  font-size: 11px; color: rgba(148,163,184,0.7);
-  font-style: italic; line-height: 1.4;
-  border-top: 1px dashed rgba(255,255,255,0.07);
-  padding-top: 7px; margin-top: 1px;
-}
-.sensei-strip-tip-chat {
-  margin-top: 4px;
-  font-family: inherit;
-  font-size: 10.5px; font-weight: 800;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  padding: 6px 10px; border-radius: 7px;
-  border: 1px solid;
-  display: inline-flex; align-items: center; gap: 5px;
-  cursor: pointer;
-  transition: filter 0.15s;
-}
-.sensei-strip-tip-chat:hover { filter: brightness(1.2); }
 
 /* === BOTTOM TAB BAR === */
 .tab-bar {
