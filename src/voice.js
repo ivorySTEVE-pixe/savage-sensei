@@ -334,7 +334,7 @@ export async function speak(text, personalityKey, lang, callbacks = {}) {
 
 export function stopSpeaking() {
   if (_currentAudio) {
-    try { _currentAudio.pause() } catch {}
+    try { _currentAudio.pause() } catch { /* already stopped */ }
     _currentAudio = null
   }
   if (TTS_SUPPORTED) window.speechSynthesis.cancel()
@@ -372,7 +372,7 @@ export function createRecognizer(lang, callbacks = {}) {
 
   return {
     start: () => { try { rec.start() } catch (e) { onError?.(e) } },
-    stop:  () => { try { rec.stop()  } catch {} },
-    abort: () => { try { rec.abort() } catch {} },
+    stop:  () => { try { rec.stop()  } catch { /* recognizer already stopped */ } },
+    abort: () => { try { rec.abort() } catch { /* recognizer already stopped */ } },
   }
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react'
 import { callGemini } from './api.js'
 import {
   Flame, BookOpen, ScrollText, X, Trash2,
-  Loader2, Send, Languages, Sparkles, ArrowLeft,
+  Loader2, Send, Sparkles, ArrowLeft,
   MessageCircle, RotateCcw, Mic, MicOff,
   Volume2, VolumeX, Type, AudioLines,
   Info, Target, BarChart3, Plus, Check, Bot,
@@ -288,6 +288,33 @@ const CHATS_KEY        = 'savage-sensei-chats'
 const GOALS_KEY        = 'savage-sensei-goals'
 const ACTIVE_KEY       = 'savage-sensei-active'  // last-picked personality key
 
+function readJSON(key, fallback) {
+  if (typeof localStorage === 'undefined') return fallback
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return fallback
+    return JSON.parse(raw)
+  } catch {
+    return fallback
+  }
+}
+
+function readString(key, fallback) {
+  if (typeof localStorage === 'undefined') return fallback
+  return localStorage.getItem(key) || fallback
+}
+
+function getOpenGoalsCount() {
+  const goals = readJSON(GOALS_KEY, [])
+  return Array.isArray(goals) ? goals.filter(g => !g.done).length : 0
+}
+
+function timestamp() {
+  return Date.now()
+}
+
+const CURRENT_YEAR = new Date().getFullYear()
+
 /* Tone instruction for chat-mode replies. Drops the "always end with a command"
    rule from the roast prompt and reframes as a brutal-but-helpful consultation. */
 const CHAT_MODE_ADDON = {
@@ -405,7 +432,7 @@ function safeResponseText(response) {
       const joined = parts.map(p => p?.text || '').join('').trim()
       if (joined) return joined
     }
-  } catch {}
+  } catch { /* malformed response shape */ }
   return ''
 }
 
@@ -982,17 +1009,17 @@ function ChatView({
 function App() {
   const [tab, setTab]                 = useState('log')   // log | ask | goals | stats
   const [showInfo, setShowInfo]       = useState(false)
-  const [openGoalsCount, setOpenGoalsCount] = useState(0)
+  const [openGoalsCount, setOpenGoalsCount] = useState(() => getOpenGoalsCount())
   const [goalsSubTab, setGoalsSubTab]       = useState('goals')   // goals | quiz
   const [step, setStep]               = useState('home')   // home | chat
   /* The home screen now always shows the form for the active sensei.
      Default to the first personality so submit is wired immediately. */
   const [personalityKey, setPersonalityKey] = useState(() => {
-    const saved = typeof localStorage !== 'undefined' && localStorage.getItem(ACTIVE_KEY)
+    const saved = readString(ACTIVE_KEY, '')
     return (saved && PERSONALITIES[saved]) ? saved : 'demonCoach'
   })
-  const [lang, setLang]               = useState('en')
-  const [sessions, setSessions]       = useState([])
+  const [lang, setLang]               = useState(() => readString(LANG_KEY, 'en'))
+  const [sessions, setSessions]       = useState(() => readJSON(STORAGE_KEY, []))
   const [subject, setSubject]         = useState('')
   const [duration, setDuration]       = useState('')
   const [notes, setNotes]             = useState('')
@@ -1003,7 +1030,7 @@ function App() {
   const [confirmClear, setConfirmClear] = useState(false)
   const [fading, setFading]           = useState(false)
   /* Chat */
-  const [chatMessages, setChatMessages] = useState({})
+  const [chatMessages, setChatMessages] = useState(() => readJSON(CHATS_KEY, {}))
   const [chatInput, setChatInput]       = useState('')
   const [chatSending, setChatSending]   = useState(false)
   const [confirmClearChat, setConfirmClearChat] = useState(false)
@@ -1053,13 +1080,13 @@ function App() {
     [sessions]
   )
 
-  /* Persist sessions + lang */
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) setSessions(JSON.parse(saved))
-    const savedLang = localStorage.getItem(LANG_KEY)
-    if (savedLang) setLang(savedLang)
+  const showToast = useCallback((msg) => {
+    setToast({ msg, out: false })
+    setTimeout(() => setToast(t => t ? { ...t, out: true } : null), 2200)
+    setTimeout(() => setToast(null), 2600)
   }, [])
+
+  /* Persist sessions + lang */
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)) }, [sessions])
   useEffect(() => { localStorage.setItem(LANG_KEY, lang) }, [lang])
   useEffect(() => {
@@ -1067,10 +1094,6 @@ function App() {
   }, [personalityKey])
 
   /* Persist chats per personality */
-  useEffect(() => {
-    const saved = localStorage.getItem(CHATS_KEY)
-    if (saved) { try { setChatMessages(JSON.parse(saved)) } catch {} }
-  }, [])
   useEffect(() => { localStorage.setItem(CHATS_KEY, JSON.stringify(chatMessages)) }, [chatMessages])
 
   /* Pre-load TTS voices once */
@@ -1080,21 +1103,12 @@ function App() {
      the auto-log UI ("On-device" vs "Pattern match"). */
   useEffect(() => { isOnDeviceAvailable().then(setOnDeviceReady) }, [])
 
-  /* Refresh open-goal count when entering Home or after Goals tab activity */
-  useEffect(() => {
-    try {
-      const list = JSON.parse(localStorage.getItem(GOALS_KEY) || '[]')
-      setOpenGoalsCount(list.filter(g => !g.done).length)
-    } catch {
-      setOpenGoalsCount(0)
-    }
-  }, [tab])
-
   /* Stop any speech / mic when leaving chat */
   useEffect(() => {
     if (step !== 'chat') {
       stopSpeaking()
       recognizerRef.current?.abort()
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setListening(false)
       setSpeakingId(null)
     }
@@ -1116,7 +1130,7 @@ function App() {
         if (msg) showToast(lang === 'jp' ? `音声エラー：${msg}` : `Voice error: ${msg}`)
       },
     })
-  }, [chatMessages, personalityKey, chatMode, step, lang])
+  }, [chatMessages, personalityKey, chatMode, step, lang, showToast])
 
   /* Global click SFX — fires on every real button press. */
   useEffect(() => {
@@ -1138,12 +1152,6 @@ function App() {
     document.documentElement.style.setProperty('--accent-rgb', `${r},${g},${b}`)
   }, [accent])
 
-  const showToast = useCallback((msg) => {
-    setToast({ msg, out: false })
-    setTimeout(() => setToast(t => t ? { ...t, out: true } : null), 2200)
-    setTimeout(() => setToast(null), 2600)
-  }, [])
-
   /* Selecting a sensei from the strip just swaps the active personality —
      no navigation, since the form now lives on the home screen. A short
      fade keeps the accent re-skin from feeling jarring. */
@@ -1152,12 +1160,6 @@ function App() {
     setFading(true)
     setTimeout(() => { setPersonalityKey(key); setRoast(''); setFading(false) }, 160)
   }, [personalityKey])
-  /* "Dive deep, the other way around" — drop straight into a chat with
-     the chosen sensei, bypassing the form. */
-  const goDirectChat = useCallback((key) => {
-    setFading(true)
-    setTimeout(() => { setPersonalityKey(key); setStep('chat'); setFading(false) }, 180)
-  }, [])
   /* Used by the chat header's "Switch sensei" button — returns to home. */
   const goPick = useCallback(() => {
     setFading(true); setRoast('')
@@ -1176,14 +1178,13 @@ function App() {
       setChatMessages(prev => ({
         ...prev,
         [personalityKey]: [
-          { role: 'user',  text: seedUser, ts: Date.now() - 1 },
-          { role: 'model', text: s.roast,  ts: Date.now() },
+          { role: 'user',  text: seedUser, ts: timestamp() - 1 },
+          { role: 'model', text: s.roast,  ts: timestamp() },
         ],
       }))
     }
     setFading(true)
     setTimeout(() => { setStep('chat'); setFading(false) }, 180)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [personalityKey, chatMessages, roast, sessions, lang])
   const goBackToWork = useCallback(() => {
     setFading(true)
@@ -1191,7 +1192,7 @@ function App() {
   }, [])
 
   const _sendChatCore = async (text, current) => {
-    const updated = [...current, { role: 'user', text, ts: Date.now() }]
+    const updated = [...current, { role: 'user', text, ts: timestamp() }]
     setChatMessages(prev => ({ ...prev, [personalityKey]: updated }))
     setChatSending(true)
     try {
@@ -1208,7 +1209,7 @@ function App() {
       if (!replyText) throw new Error('Empty response from model')
       setChatMessages(prev => ({
         ...prev,
-        [personalityKey]: [...updated, { role: 'model', text: replyText, ts: Date.now() }],
+        [personalityKey]: [...updated, { role: 'model', text: replyText, ts: timestamp() }],
       }))
     } catch (err) {
       console.error('Chat error:', err)
@@ -1802,7 +1803,7 @@ function App() {
                 </p>
               </div>
               <AskAITab
-                sessions={sessions} accent={accent} lang={lang} 
+                sessions={sessions} lang={lang}
                 chatMessages={chatMessages}
                 setChatMessages={setChatMessages}
                 openFullChat={(key) => {
@@ -1879,7 +1880,7 @@ function App() {
 
           <div style={{ padding: '40px 0 28px', textAlign: 'center',
             fontSize: 11, color: 'rgba(100,116,139,0.4)' }}>
-            Savage Sensei · React + Gemini · {new Date().getFullYear()}
+            Savage Sensei · React + Gemini · {CURRENT_YEAR}
           </div>
         </div>
       </div>
@@ -1896,7 +1897,10 @@ function App() {
           return (
             <button key={tb.id}
               className={`tab-btn${tab === tb.id ? ' active' : ''}`}
-              onClick={() => setTab(tb.id)}>
+              onClick={() => {
+                setTab(tb.id)
+                if (tb.id === 'log') setOpenGoalsCount(getOpenGoalsCount())
+              }}>
               <Icon size={18} strokeWidth={2} />
               <span>{tb.label}</span>
             </button>
@@ -2064,7 +2068,7 @@ const ExpandableStatCard = memo(function ExpandableStatCard({ kind, accent, sess
   const tint  = isStreak ? accent : 'rgba(148,163,184,0.6)'
 
   // Compute expanded content
-  let body = null
+  let body
   if (isStreak) {
     // Last 7 days breakdown
     const days = []
@@ -2366,19 +2370,15 @@ const StatsTab = memo(function StatsTab({ sessions, accent, lang }) {
 
 /* ─── GOALS TAB ───────────────────────────────────────────── */
 function GoalsTab({ accent, sessions, lang }) {
-  const [goals, setGoals] = useState([])
+  const [goals, setGoals] = useState(() => readJSON(GOALS_KEY, []))
   const [input, setInput] = useState('')
   const [selAccent, setSelAccent] = useState(accent || '#ef4444')
 
-  useEffect(() => {
-    const saved = localStorage.getItem(GOALS_KEY)
-    if (saved) { try { setGoals(JSON.parse(saved)) } catch {} }
-  }, [])
   useEffect(() => { localStorage.setItem(GOALS_KEY, JSON.stringify(goals)) }, [goals])
 
   const addGoal = () => {
     if (!input.trim()) return
-    setGoals(g => [{ id: Date.now(), text: input.trim(), done: false, accent: selAccent, createdAt: new Date().toISOString() }, ...g])
+    setGoals(g => [{ id: timestamp(), text: input.trim(), done: false, accent: selAccent, createdAt: new Date().toISOString() }, ...g])
     setInput('')
   }
   const toggle = (id) => setGoals(g => g.map(x => x.id === id ? { ...x, done: !x.done } : x))
@@ -2670,7 +2670,6 @@ function QuizTab({ accent, sessions, lang }) {
 
   // Active quiz
   const cur = questions[idx]
-  const correct = picked !== null && picked === cur.answer
   return (
     <div className="anim-fadeup">
       {/* Progress */}
@@ -2748,7 +2747,7 @@ function QuizTab({ accent, sessions, lang }) {
 /* ─── ASK AI TAB ───────────────────────────────────────────── */
 const ASK_KEY = 'savage-sensei-ask'
 
-function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openFullChat }) {
+function AskAITab({ sessions, lang, chatMessages, setChatMessages, openFullChat }) {
   /* selectedSensei = null means Analyst (generic). Otherwise a personality key. */
   const [selectedSensei, setSelectedSensei] = useState(null)
 
@@ -2757,20 +2756,14 @@ function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openF
     ? "やぁ！君の専属学習アシスタントや。過去のセッションについて何でも聞いてみ — パターン、弱点、次に何をやるべきか、調子はどうか、全部わかる。"
     : "Hey! I'm your personal study assistant. Ask me anything about your sessions — patterns, weak spots, what to study next, or how you're trending. I have full context of your history."
 
-  const [analystMsgs, setAnalystMsgs] = useState([{ role: 'ai', text: analystGreeting }])
+  const [analystMsgs, setAnalystMsgs] = useState(() => {
+    const saved = readJSON(ASK_KEY, null)
+    return Array.isArray(saved) && saved.length ? saved : [{ role: 'ai', text: analystGreeting }]
+  })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
 
-  useEffect(() => {
-    const saved = localStorage.getItem(ASK_KEY)
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length) setAnalystMsgs(parsed)
-      } catch {}
-    }
-  }, [])
   useEffect(() => { localStorage.setItem(ASK_KEY, JSON.stringify(analystMsgs)) }, [analystMsgs])
 
   /* Active conversation = analyst thread OR shared chat thread for the sensei */
@@ -2820,7 +2813,7 @@ function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openF
       } else {
         /* Per-sensei path — writes into the SAME chatMessages store as the chat panel */
         const current = chatMessages[selectedSensei] || []
-        const updated = [...current, { role: 'user', text: q, ts: Date.now() }]
+        const updated = [...current, { role: 'user', text: q, ts: timestamp() }]
         setChatMessages(prev => ({ ...prev, [selectedSensei]: updated }))
         const sys =
           PERSONALITIES[selectedSensei].prompt[lang] +
@@ -2835,7 +2828,7 @@ function AskAITab({ sessions, accent, lang, chatMessages, setChatMessages, openF
         if (!replyText) throw new Error('Empty response from model')
         setChatMessages(prev => ({
           ...prev,
-          [selectedSensei]: [...updated, { role: 'model', text: replyText, ts: Date.now() }],
+          [selectedSensei]: [...updated, { role: 'model', text: replyText, ts: timestamp() }],
         }))
       }
     } catch (err) {

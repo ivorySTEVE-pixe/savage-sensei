@@ -90,10 +90,10 @@ function tryParseJSON(text) {
   try {
     const parsed = JSON.parse(cleaned)
     return parsed && typeof parsed === 'object' ? parsed : null
-  } catch {}
+  } catch { /* not valid raw JSON */ }
   const m = cleaned.match(/\{[\s\S]*\}/)
   if (m) {
-    try { return JSON.parse(m[0]) } catch {}
+    try { return JSON.parse(m[0]) } catch { /* not valid embedded JSON */ }
   }
   return null
 }
