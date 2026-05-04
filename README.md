@@ -1,6 +1,6 @@
 # React + Vite
 
-Build Type: Manual (self-built)
+Build Type: AI-assisted (generated + human-guided)
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
